@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4.5em;  /* Leaving space for the top fixed navbar */
+  height: calc(100vh - 4.5em);
+  justify-content: center; /* Centers content vertically */
+  align-items: center;     /* Centers content horizontally */
+}
+
+@media (max-width: 600px) {
+  .container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 120px;  
+    align-items: center;    
+  }
+}
+
+.listItem {
+  margin-bottom: 10px; /* Adjust as needed for desired spacing */
+}
+
+.heading2 {
+  margin-bottom: 1em;
+}
+
+.link {
+  color: aqua;
+}
