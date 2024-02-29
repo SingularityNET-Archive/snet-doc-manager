@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import type { NextPage } from "next";
 import styles from '../styles/home.module.css';
-import axios from 'axios';
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
