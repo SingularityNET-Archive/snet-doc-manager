@@ -1,4 +1,5 @@
-import { supabase } from '../../lib/supabaseClient';
+//processDocs.js
+import { supabase, supabaseAdmin } from '../../lib/supabaseClient';
 import { google } from 'googleapis';
 
 const client_id = process.env.GOOGLE_CLIENT_ID;
@@ -22,7 +23,7 @@ async function getValidAccessToken() {
   return token;
 }
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Fetch document list from Supabase
   const { data: docs, error } = await supabase
     .from('documents')
@@ -40,7 +41,7 @@ exports.handler = async (event, context) => {
       
       if (hasChanges) {
         const newDocId = await makeCopyOfDocument(doc.google_id);
-        await supabase
+        await supabaseAdmin
           .from('documents')
           .update({ latest_copy_g_id: newDocId })
           .match({ google_id: doc.google_id });
@@ -55,21 +56,56 @@ exports.handler = async (event, context) => {
 };
 
 async function checkDocumentForChanges(doc) {
-  const docs = google.docs({version: 'v1', auth: oauth2Client});
+  const drive = google.drive({version: 'v3', auth: oauth2Client});
 
   try {
-    // Example: Get the document's title to check for changes
-    const response = await docs.documents.get({
-      documentId: doc.google_id,
+    // Fetch the document's current permissions
+    const permissions = await drive.permissions.list({
+      fileId: doc.google_id,
+      fields: 'permissions(id, type, role)',
     });
-    console.log("Document title:", response.data.title);
-    // Add logic to determine if changes were made
-    return false; // Placeholder: return true if changes are detected
+    
+    // Determine the current sharing status based on permissions
+    const currentStatus = determineSharingStatus(permissions.data.permissions);
+
+    // Compare current status with the last known status stored in your database
+    const hasStatusChanged = currentStatus !== doc.sharing_status;
+
+    if (hasStatusChanged) {
+      // Document sharing status has changed, update the database
+      await supabaseAdmin
+        .from('documents')
+        .update({ sharing_status: currentStatus })
+        .match({ google_id: doc.google_id });
+
+      console.log(`Updated sharing status for document ${doc.google_id} to ${currentStatus}`);
+    }
+
+    // Return whether there was a change in sharing status or not
+    return hasStatusChanged;
   } catch (error) {
-    console.error("Failed to get document:", error);
+    console.error("Failed to check document for changes:", error);
     throw error; // Rethrow or handle as needed
   }
 }
+
+function determineSharingStatus(permissions) {
+  let status = 'view only'; // Default to the most restrictive
+  permissions.forEach(permission => {
+    if (permission.type === 'anyone') {
+      if (permission.role === 'writer') {
+        status = 'open';
+      } else if (permission.role === 'commenter') {
+        status = 'comment';
+      } else {
+        status = 'view only';
+      }
+    }
+    // Additional logic for 'user', 'group', 'domain' types can be added here
+  });
+  return status;
+}
+
 
 async function makeCopyOfDocument(docId) {
   const drive = google.drive({version: 'v3', auth: oauth2Client});
