@@ -1,0 +1,15 @@
+name: Process Documents
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight
+
+jobs:
+  process_docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Invoke processDocs function
+        run: |
+          curl -X POST 'https://your-netlify-site.netlify.app/.netlify/functions/processDocs'
