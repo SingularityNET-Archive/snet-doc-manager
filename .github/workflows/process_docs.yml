@@ -27,7 +27,7 @@ jobs:
           docs = response.json()
 
           # Break documents into batches
-          batch_size = 100
+          batch_size = 10
           batches = [docs[i:i+batch_size] for i in range(0, len(docs), batch_size)]
 
           # Process each batch by calling your processDocs Netlify function
