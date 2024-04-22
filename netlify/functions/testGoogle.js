@@ -22,31 +22,60 @@ oauth2Client.setCredentials({
   refresh_token: refresh_token,
 });
 
+const findTextByCommentAnchor = (docContent, anchor) => {
+  // This is a very basic example that needs further development
+  let text = '';
+  const elements = docContent.body.content;
+
+  const searchElements = (elements) => {
+    for (const element of elements) {
+      if (element.paragraph) {
+        // Assuming direct matching for simplicity, but you'll need to parse `anchor`
+        if (element.paragraph.elementId === anchor) {
+          element.paragraph.elements.forEach((textElement) => {
+            if (textElement.textRun) {
+              text += textElement.textRun.content;
+            }
+          });
+        }
+      }
+      // Add recursive search for other element types (tables, lists, etc.)
+    }
+  };
+
+  searchElements(elements);
+  return text.trim();
+};
+
+
 export const handler = async (event, context) => {
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const docs = google.docs({ version: 'v1', auth: oauth2Client }); // Google Docs API client
   const results = [];
 
   for (let doc of documents) {
     try {
-      const fileDetails = await drive.files.get({
+      const commentsResponse = await drive.comments.list({
         fileId: doc.google_id,
-        fields: 'id, name, permissions(id, type, role)',
+        fields: 'comments(anchor,content,author)',
       });
 
-      let sharingStatus;
-      // Check if permissions are returned
-      if (fileDetails.data.permissions && fileDetails.data.permissions.length > 0) {
-        sharingStatus = fileDetails.data.permissions.map(permission => ({
-          id: permission.id,
-          type: permission.type,
-          role: permission.role,
-        }));
-      } else {
-        // Set a custom message if permissions are not available
-        sharingStatus = [{id: 'anyoneWithLink', type: 'anyone', role: 'viewOnly'}];
-      }
+      // Fetch the document structure from Google Docs API
+      const docContent = await docs.documents.get({
+        documentId: doc.google_id,
+      });
 
-      results.push({ google_id: doc.google_id, sharingStatus: sharingStatus });
+      const comments = commentsResponse.data.comments || [];
+      const commentsWithText = await Promise.all(comments.map(async (comment) => {
+        const text = findTextByCommentAnchor(docContent.data, comment.anchor);
+        return { ...comment, relatedText: text };
+      }));
+
+      results.push({
+        google_id: doc.google_id,
+        comments: commentsWithText,
+      });
+
     } catch (error) {
       console.error(`Error fetching details for document ${doc.google_id}:`, error);
       results.push({ google_id: doc.google_id, error: error.message });
