@@ -2,7 +2,7 @@
 import { supabaseAdmin } from '../../lib/supabaseClient';
 import axios from 'axios';
 
-const isTesting = true;
+const isTesting = false;
 const callVars = isTesting ? { baseUrl : 'http://localhost:8888/.netlify/functions/', test: true } : { baseUrl : `${process.env.NETLIFY_FUNCTION_URL}/.netlify/functions/`, test: false };
 const { baseUrl, test } = callVars;
 
