@@ -8,8 +8,32 @@ on:
 jobs:
   process_docs:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Invoke processDocs function
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
         run: |
-          curl -X POST 'https://your-netlify-site.netlify.app/.netlify/functions/processDocs'
+          # Install any necessary dependencies for your script
+          # For example, if you're using Python:
+          # pip install requests
+
+      - name: Fetch documents and process in batches
+        env:
+          NETLIFY_FUNCTION_URL: ${{ secrets.NETLIFY_FUNCTION_URL }}
+        run: |
+          # Make a call to your getAllDocs Netlify function
+          response = requests.get(f"{NETLIFY_FUNCTION_URL}/getAllDocs")
+          docs = response.json()
+
+          # Break documents into batches
+          batch_size = 100
+          batches = [docs[i:i+batch_size] for i in range(0, len(docs), batch_size)]
+
+          # Process each batch by calling your processDocs Netlify function
+          for batch in batches:
+              response = requests.post(
+                  f"{NETLIFY_FUNCTION_URL}/processDocs",
+                  json={"docs": batch, "test": False}
+              )
+              print(response.json())
