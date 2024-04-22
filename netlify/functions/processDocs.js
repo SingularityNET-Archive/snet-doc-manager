@@ -1,9 +1,12 @@
 // processDocs.js
 import { supabaseAdmin } from '../../lib/supabaseClient';
-import axios from 'axios';
+import fetch from 'node-fetch';
 
 const isTesting = false;
-const callVars = isTesting ? { baseUrl : 'http://localhost:8888/.netlify/functions/', test: true } : { baseUrl : `${process.env.NETLIFY_FUNCTION_URL}/.netlify/functions/`, test: false };
+const callVars = isTesting
+  ? { baseUrl: 'http://localhost:8888/.netlify/functions/', test: true }
+  : { baseUrl: `${process.env.NETLIFY_FUNCTION_URL}/.netlify/functions/`, test: false };
+
 const { baseUrl, test } = callVars;
 
 export const handler = async (event, context) => {
@@ -28,13 +31,20 @@ export const handler = async (event, context) => {
   for (const batch of batches) {
     try {
       const [statusChangeResponse, commentsResponse] = await Promise.all([
-        axios.post(`${baseUrl}checkStatusChanges`, { docs: batch, test: test }),
-        axios.post(`${baseUrl}getDocComments`, { docs: batch, test: test }),
+        fetch(`${baseUrl}checkStatusChanges`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ docs: batch, test: test }),
+        }).then((res) => res.json()),
+        fetch(`${baseUrl}getDocComments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ docs: batch, test: test }),
+        }).then((res) => res.json()),
       ]);
 
-      statusChangeResponses.push(statusChangeResponse.data);
-      commentsResponses.push(commentsResponse.data);
-
+      statusChangeResponses.push(statusChangeResponse);
+      commentsResponses.push(commentsResponse);
       console.log('Batch processed successfully');
     } catch (error) {
       console.error('Error processing batch:', error);
