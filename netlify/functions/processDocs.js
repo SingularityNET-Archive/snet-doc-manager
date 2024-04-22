@@ -2,7 +2,7 @@
 import { supabaseAdmin } from '../../lib/supabaseClient';
 import fetch from 'node-fetch';
 
-const isTesting = false;
+const isTesting = process.env.IS_TESTING === 'true';
 const callVars = isTesting
   ? { baseUrl: 'http://localhost:8888/.netlify/functions/', test: true }
   : { baseUrl: `${process.env.NETLIFY_FUNCTION_URL}/.netlify/functions/`, test: false };
