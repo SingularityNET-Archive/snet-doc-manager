@@ -23,7 +23,7 @@ export const handler = async (event, context) => {
 
   function determineSharingStatus(permissions) {
     if (!permissions || permissions.length === 0) {
-      return "closed or view only"; // Handle case where no permissions are returned
+      return "view only"; // Handle case where no permissions are returned
     }
 
     let status = 'view only'; // Default to the most restrictive
@@ -47,9 +47,9 @@ export const handler = async (event, context) => {
   
     try {
       // Attempt to fetch the document's current permissions
-      const permissionsResponse = await drive.permissions.list({
+      const permissionsResponse = await drive.files.get({
         fileId: doc.google_id,
-        fields: 'permissions(id, type, role)',
+        fields: 'id, name, permissions(id, type, role)',
       });
       
       // Determine the current sharing status based on permissions

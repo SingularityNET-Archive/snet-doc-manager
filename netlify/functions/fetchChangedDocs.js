@@ -26,9 +26,9 @@ export const handler = async (event, context) => {
 
   for (const doc of docs) {
     try {
-      const permissions = await drive.permissions.list({
+      const permissions = await drive.files.get({
         fileId: doc.google_id,
-        fields: 'permissions(id, type, role)',
+        fields: 'id, name, permissions(id, type, role)',
       });
       const currentStatus = determineSharingStatus(permissions.data.permissions);
       
