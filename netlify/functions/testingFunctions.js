@@ -5,19 +5,6 @@ export const handler = async (event, context) => {
     const baseUrl = 'http://localhost:8888/.netlify/functions/';
 
     try {
-      // First, call the testGooglePermissions function to check if we have access
-      const googleTestFunctionUrl = `${baseUrl}testGoogle`; 
-      const googlePermissionsResponse = await axios.get(googleTestFunctionUrl);
-      const permissionResults = googlePermissionsResponse.data;
-
-      // If permissionResults indicate a failure, return or throw an error
-      if (permissionResults.some(result => result.error)) {
-        return {
-          statusCode: 403, // Forbidden or unauthorized
-          body: JSON.stringify({ message: "Insufficient permissions for one or more documents." })
-        };
-      }
-
       const fetchAllDocsUrl = `${baseUrl}fetchAllDocs`;
       const response = await axios.get(fetchAllDocsUrl);
       const docs = response.data;
