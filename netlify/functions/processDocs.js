@@ -1,5 +1,4 @@
 // processDocs.js
-import { supabaseAdmin } from '../../lib/supabaseClient';
 import fetch from 'node-fetch';
 
 const isTesting = process.env.IS_TESTING === 'true';
@@ -10,53 +9,37 @@ const callVars = isTesting
 const { baseUrl, test } = callVars;
 
 export const handler = async (event, context) => {
-  const { data: docs, error } = await supabaseAdmin
-    .from('documents')
-    .select('google_id, sharing_status');
+  const { docs } = JSON.parse(event.body);
 
-  if (error) {
-    console.error('Error fetching documents:', error);
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+  try {
+    const [statusChangeResponse, commentsResponse] = await Promise.all([
+      fetch(`${baseUrl}checkStatusChanges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docs: docs, test: test }),
+      }).then((res) => res.json()),
+      fetch(`${baseUrl}getDocComments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docs: docs, test: test }),
+      }).then((res) => res.json()),
+    ]);
+
+    console.log('Documents processed successfully');
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'Documents processed successfully',
+        statusChangeResponse,
+        commentsResponse,
+      }),
+    };
+  } catch (error) {
+    console.error('Error processing documents:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal Server Error' }),
+    };
   }
-
-  const batchSize = 100; // Adjust the batch size as needed
-  const batches = [];
-  const statusChangeResponses = [];
-  const commentsResponses = [];
-
-  for (let i = 0; i < docs.length; i += batchSize) {
-    batches.push(docs.slice(i, i + batchSize));
-  }
-
-  for (const batch of batches) {
-    try {
-      const [statusChangeResponse, commentsResponse] = await Promise.all([
-        fetch(`${baseUrl}checkStatusChanges`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ docs: batch, test: test }),
-        }).then((res) => res.json()),
-        fetch(`${baseUrl}getDocComments`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ docs: batch, test: test }),
-        }).then((res) => res.json()),
-      ]);
-
-      statusChangeResponses.push(statusChangeResponse);
-      commentsResponses.push(commentsResponse);
-      console.log('Batch processed successfully');
-    } catch (error) {
-      console.error('Error processing batch:', error);
-    }
-  }
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: 'Documents processed successfully',
-      statusChangeResponses,
-      commentsResponses,
-    }),
-  };
 };
