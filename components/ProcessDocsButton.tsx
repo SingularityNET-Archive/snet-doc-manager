@@ -45,7 +45,7 @@ const ProcessDocsButton = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ docs, statusChangeResponse, test: false}), // turn test to true if you dont want to make copies of documents
+            body: JSON.stringify({ docs, statusChangeResponse, test: true}), // turn test to true if you dont want to make copies of documents
           });
         }
       }
