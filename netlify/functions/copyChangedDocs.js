@@ -66,6 +66,8 @@ export const handler = async (event, context) => {
               all_copy_ids: updatedCopyIds,
             })
             .eq('google_id', doc.google_id);
+
+          console.log(`Copied document ${doc.google_id} to ${newDocId}`);
         }
       });
   
