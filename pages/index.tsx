@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { NextPage } from "next";
 import styles from '../styles/home.module.css';
+import ProcessDocsButton from '../components/ProcessDocsButton';
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -11,6 +12,7 @@ const Home: NextPage = () => {
         <div>
           <div>
             <h1>Snet Document Manager</h1>
+            <ProcessDocsButton />
           </div>
         </div>
       )}

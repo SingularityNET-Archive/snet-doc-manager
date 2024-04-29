@@ -3,9 +3,14 @@ import fetch from 'node-fetch';
 
 const isTesting = process.env.IS_TESTING === 'true';
 const callVars = isTesting
-  ? { baseUrl: 'http://localhost:8888/.netlify/functions/', test: true }
-  : { baseUrl: `${process.env.NETLIFY_FUNCTION_URL}/.netlify/functions/`, test: false };
-
+  ? {
+      baseUrl: 'http://localhost:8888/.netlify/functions/',
+      test: true,
+    }
+  : {
+      baseUrl: `${process.env.NETLIFY_FUNCTION_URL}/.netlify/functions/`,
+      test: false,
+    };
 const { baseUrl, test } = callVars;
 
 export const handler = async (event, context) => {
@@ -26,12 +31,12 @@ export const handler = async (event, context) => {
     ]);
 
     console.log('Documents processed successfully');
-
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: 'Documents processed successfully',
         statusChangeResponse,
+        docs,
         commentsResponse,
       }),
     };
