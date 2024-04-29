@@ -36,7 +36,7 @@ async function makeCopyOfDocument(docId) {
 
 export const handler = async (event, context) => {
     const { docs, statusChangeResponse, test } = JSON.parse(event.body);
-  
+    
     if (!docs || !statusChangeResponse) {
       console.error('Missing docs or statusChangeResponse in the request body');
       return {
@@ -54,7 +54,9 @@ export const handler = async (event, context) => {
         };
       });
   
-      const copyPromises = changedDocsWithCopyIds.map(async (doc) => {
+      const copiedDocs = [];
+  
+      for (const doc of changedDocsWithCopyIds) {
         if (!test) {
           const newDocId = await makeCopyOfDocument(doc.google_id);
           // Update the all_copy_ids array
@@ -66,18 +68,22 @@ export const handler = async (event, context) => {
               all_copy_ids: updatedCopyIds,
             })
             .eq('google_id', doc.google_id);
-
-          console.log(`Copied document ${doc.google_id} to ${newDocId}`);
-        }
-      });
   
-      await Promise.all(copyPromises);
-
-    console.log('Changed documents copied successfully');
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Changed documents copied successfully' }),
-    };
+          copiedDocs.push({
+            google_id: doc.google_id,
+            new_copy_id: newDocId,
+            all_copy_ids: updatedCopyIds,
+          });
+        }
+      }
+      console.log('Changed documents processed successfully');
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: 'Changed documents processed successfully',
+          copied_docs: copiedDocs,
+        }),
+      };
   } catch (error) {
     console.error('Error copying changed documents:', error);
     return {
