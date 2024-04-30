@@ -8,53 +8,55 @@ on:
 jobs:
   process_docs:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get install -y jq
-        # Install any other necessary dependencies
-
-    - name: Fetch documents and process in batches
-      env:
-        NETLIFY_FUNCTION_URL: ${{ secrets.NETLIFY_FUNCTION_URL }}
-      run: |
-        # Make a call to your getAllDocs Netlify function
-        response=$(curl -s "${NETLIFY_FUNCTION_URL}/getAllDocs")
-        echo "Response from getAllDocs: $response"
-
-        # Check if the response is valid JSON
-        if ! echo "$response" | jq -e . >/dev/null 2>&1; then
-          echo "Error: Invalid JSON response from getAllDocs function"
-          exit 1
-        fi
-
-        docs=$(echo "$response" | jq -c '.')
-
-        # Break documents into batches
-        batch_size=10
-        batches=$(echo "$docs" | jq -c --argjson bs "$batch_size" 'range(0; length; $bs) as $i | .[$i:$i+$bs]')
-
-        # Process each batch by calling your processDocs Netlify function
-        while IFS= read -r batch; do
-          response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/processDocs")
-
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y jq
+          # Install any other necessary dependencies
+          
+      - name: Fetch documents and process in batches
+        env:
+          NETLIFY_FUNCTION_URL: ${{ secrets.NETLIFY_FUNCTION_URL }}
+        run: |
+          # Make a call to your getAllDocs Netlify function
+          response=$(curl -s "${NETLIFY_FUNCTION_URL}/getAllDocs")
+          echo "Response from getAllDocs: $response"
+          
           # Check if the response is valid JSON
           if ! echo "$response" | jq -e . >/dev/null 2>&1; then
-            echo "Error: Invalid JSON response from processDocs function"
+            echo "Error: Invalid JSON response from getAllDocs function"
             exit 1
           fi
-
-          echo "$response" | jq '.'
-
-          # Pass docs and statusChangeResponse to copyChangedDocs
-          docs=$(echo "$response" | jq -r '.docs')
-          statusChangeResponse=$(echo "$response" | jq -r '.statusChangeResponse')
-
-          if [ -n "$statusChangeResponse" ] && [ "$statusChangeResponse" != "[]" ]; then
-            curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $docs, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/copyChangedDocs"
-          fi
-        done <<< "$batches"
+          
+          docs=$(echo "$response" | jq -c '.')
+          
+          # Break documents into batches
+          batch_size=10
+          batches=$(echo "$docs" | jq -c --argjson bs "$batch_size" 'range(0; length; $bs) as $i | .[$i:$i+$bs]')
+          
+          # Process each batch by calling your processDocs Netlify function
+          while IFS= read -r batch; do
+            response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/processDocs")
+            
+            # Check if the response is valid JSON
+            if ! echo "$response" | jq -e . >/dev/null 2>&1; then
+              echo "Error: Invalid JSON response from processDocs function"
+              exit 1
+            fi
+            
+            echo "$response" | jq '.'
+            
+            # Pass docs and statusChangeResponse to copyChangedDocs
+            docs=$(echo "$response" | jq -r '.docs')
+            statusChangeResponse=$(echo "$response" | jq -r '.statusChangeResponse')
+            
+            if [ -n "$statusChangeResponse" ] && [ "$statusChangeResponse" != "[]" ]; then
+              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $docs, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/copyChangedDocs"
+              
+              # Call getDocText Netlify function to retrieve and save document text for changed documents
+              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $docs, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocText"
+            fi
+          done <<< "$batches"
