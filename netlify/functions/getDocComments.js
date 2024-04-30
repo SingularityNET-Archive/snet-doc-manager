@@ -12,10 +12,7 @@ const oauth2Client = new google.auth.OAuth2(
   client_secret,
   redirect_uris
 );
-
-oauth2Client.setCredentials({
-  refresh_token: refreshToken,
-});
+oauth2Client.setCredentials({ refresh_token: refreshToken });
 
 export const handler = async (event, context) => {
   const { docs, test } = JSON.parse(event.body);
@@ -26,6 +23,7 @@ export const handler = async (event, context) => {
     let comments = {
       google_id: doc.google_id,
       comments: [],
+      access_denied: false, // Add a flag to indicate access denied
     };
 
     try {
@@ -33,7 +31,6 @@ export const handler = async (event, context) => {
         fileId: doc.google_id,
         fields: 'comments(id,author,content,quotedFileContent,anchor,replies(author,content))',
       });
-
       const commentsData = commentsResponse.data.comments;
       comments.comments = commentsData.map((comment) => {
         const selectedText = comment.quotedFileContent?.value || '';
@@ -41,7 +38,6 @@ export const handler = async (event, context) => {
           author: reply.author,
           content: reply.content,
         }));
-
         return {
           id: comment.id,
           author: comment.author,
@@ -51,12 +47,16 @@ export const handler = async (event, context) => {
           replies,
         };
       });
-
       return comments;
     } catch (error) {
-      console.error('error', error);
-      // Here, you could distinguish between different types of errors
-      throw error; // Rethrow or handle other errors as needed
+      if (error.code === 403) {
+        console.warn('Access denied for document:', doc.google_id);
+        comments.access_denied = true; // Set the access denied flag to true
+        return comments;
+      } else {
+        console.error('Error:', error);
+        throw error; // Rethrow other errors
+      }
     }
   }
 

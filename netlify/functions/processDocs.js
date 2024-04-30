@@ -5,7 +5,7 @@ const isTesting = process.env.IS_TESTING === 'true';
 const callVars = isTesting
   ? {
       baseUrl: 'http://localhost:8888/.netlify/functions/',
-      test: true,
+      test: false,
     }
   : {
       baseUrl: `${process.env.NETLIFY_FUNCTION_URL}/.netlify/functions/`,

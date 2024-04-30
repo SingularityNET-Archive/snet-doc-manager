@@ -6,6 +6,7 @@ const client_id = process.env.GOOGLE_CLIENT_ID;
 const client_secret = process.env.GOOGLE_CLIENT_SECRET;
 const redirect_uris = process.env.GOOGLE_REDIRECT_URI;
 const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+
 const oauth2Client = new google.auth.OAuth2(
   client_id,
   client_secret,
@@ -21,7 +22,9 @@ export const handler = async (event, context) => {
     if (!permissions || permissions.length === 0) {
       return "view only"; // Handle case where no permissions are returned
     }
+
     let status = "view only"; // Default to the most restrictive
+
     permissions.forEach((permission) => {
       if (permission.type === "anyone") {
         if (permission.role === "writer") {
@@ -31,8 +34,10 @@ export const handler = async (event, context) => {
         } else {
           status = "view only";
         }
-      } // Additional logic for 'user', 'group', 'domain' types can be added here
+      }
+      // Additional logic for 'user', 'group', 'domain' types can be added here
     });
+
     return status;
   }
 
@@ -44,14 +49,18 @@ export const handler = async (event, context) => {
         fileId: doc.google_id,
         fields: "id, name, permissions(id, type, role)",
       });
+
       // Determine the current sharing status based on permissions
       const currentStatus = determineSharingStatus(
         permissionsResponse.data.permissions
       );
+
       // Compare current status with the last known status stored in your database
-      const hasStatusChanged = currentStatus !== doc.sharing_status;
+      const hasStatusChanged =
+        doc.sharing_status === null || currentStatus !== doc.sharing_status;
+
       if (hasStatusChanged && !test) {
-        // Document sharing status has changed, update the database
+        // Document sharing status has changed or was previously null, update the database
         await supabaseAdmin
           .from("documents")
           .update({
@@ -63,28 +72,30 @@ export const handler = async (event, context) => {
           `Updated sharing status for document ${doc.google_id} to ${currentStatus}`
         );
       }
+
       // Return whether there was a change in sharing status or not
       return hasStatusChanged;
     } catch (error) {
-      console.error("Failed to check document for changes:", error);
-      // Here, you could distinguish between different types of errors
-      // For example, if permissions couldn't be fetched due to an API restriction or rate limit
       if (error.code === 403) {
-        // Example: Handling specific API errors
-        if (doc.sharing_status == "view only") {
-          return false;
-        } else {
-          return true;
-        }
+        console.warn('Access denied for document:', doc.google_id);
+        // Return true if the document's current sharing status is null or not "view only"
+        return doc.sharing_status === null || doc.sharing_status !== "view only";
+      } else {
+        console.error("Failed to check document for changes:", error);
+        throw error; // Rethrow other errors
       }
-      throw error; // Rethrow or handle other errors as needed
     }
   }
+
   for (const doc of docs) {
     const hasChanges = await checkDocumentForChanges(doc);
     if (hasChanges) {
       changedDocs.push(doc.google_id);
     }
   }
-  return { statusCode: 200, body: JSON.stringify(changedDocs) };
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify(changedDocs),
+  };
 };
