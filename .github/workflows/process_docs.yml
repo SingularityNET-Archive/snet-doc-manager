@@ -55,8 +55,11 @@ jobs:
             
             if [ -n "$statusChangeResponse" ] && [ "$statusChangeResponse" != "[]" ]; then
               curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $docs, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/copyChangedDocs"
-              
+
               # Call getDocText Netlify function to retrieve and save document text for changed documents
-              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $docs, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocText"
+              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocText"
+
+              # Call getDocBodyAndCommitToGitHub Netlify function to commit document bodies to GitHub
+              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocBodyAndCommitToGitHub"
             fi
           done <<< "$batches"
