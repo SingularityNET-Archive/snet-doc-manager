@@ -32,12 +32,17 @@ export const handler = async (event, context) => {
         fields: 'comments(id,author,content,quotedFileContent,anchor,replies(author,content))',
       });
       const commentsData = commentsResponse.data.comments;
+
       comments.comments = commentsData.map((comment) => {
         const selectedText = comment.quotedFileContent?.value || '';
         const replies = comment.replies?.map((reply) => ({
           author: reply.author,
           content: reply.content,
         }));
+
+        // Check if the comment is resolved
+        const resolved = replies.some((reply) => reply.content === '');
+
         return {
           id: comment.id,
           author: comment.author,
@@ -45,8 +50,10 @@ export const handler = async (event, context) => {
           selectedText,
           anchor: comment.anchor,
           replies,
+          resolved,
         };
       });
+
       return comments;
     } catch (error) {
       if (error.code === 403) {

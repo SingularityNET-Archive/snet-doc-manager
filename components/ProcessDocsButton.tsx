@@ -37,17 +37,15 @@ const ProcessDocsButton = () => {
         const result = await response.json();
         processedResults.push(result);
 
-        
         const { docs, statusChangeResponse } = result;
         if (statusChangeResponse.length > 0) {
-
           // Pass docs and statusChangeResponse to copyChangedDocs
           await fetch('/.netlify/functions/copyChangedDocs', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ docs, statusChangeResponse, test: false}), // turn test to true if you dont want to make copies of documents
+            body: JSON.stringify({ docs, statusChangeResponse, test: false }), // turn test to true if you dont want to make copies of documents
           });
 
           // Call getDocText Netlify function to retrieve and save document text for changed documents
@@ -59,6 +57,15 @@ const ProcessDocsButton = () => {
             body: JSON.stringify({ docs: batch, statusChangeResponse, test: false }),
           });
 
+          // Call getDocBodyAndCommitToGitHub Netlify function to commit document bodies to GitHub
+
+          await fetch('/.netlify/functions/getDocBodyAndCommitToGitHub', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ docs: batch, statusChangeResponse, test: false }),
+          });
         }
       }
 
