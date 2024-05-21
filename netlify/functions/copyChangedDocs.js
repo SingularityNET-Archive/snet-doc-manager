@@ -14,6 +14,17 @@ const oauth2Client = new google.auth.OAuth2(
 );
 oauth2Client.setCredentials({ refresh_token: refreshToken });
 
+async function deleteFileFromDrive(fileId) {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  try {
+    await drive.files.delete({ fileId });
+    console.log('File deleted successfully:', fileId);
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    throw error;
+  }
+}
+
 async function makeCopyOfDocument(docId) {
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
   try {
@@ -57,13 +68,19 @@ export const handler = async (event, context) => {
     });
 
     const copiedDocs = [];
-
     for (const doc of changedDocsWithCopyIds) {
       if (!test) {
+        // Delete the last copy from Google Drive
+        if (doc.all_copy_ids.length > 0) {
+          const lastCopyId = doc.all_copy_ids[doc.all_copy_ids.length - 1];
+          await deleteFileFromDrive(lastCopyId);
+        }
+
+        // Create a new copy
         const newDocId = await makeCopyOfDocument(doc.google_id);
         if (newDocId !== null) {
-          // Update the all_copy_ids array only if the copy operation was successful
-          const updatedCopyIds = [...doc.all_copy_ids, newDocId];
+          // Update the all_copy_ids array by removing the last copy and adding the new one
+          const updatedCopyIds = [...doc.all_copy_ids.slice(0, -1), newDocId];
           await supabaseAdmin
             .from('documents')
             .update({
