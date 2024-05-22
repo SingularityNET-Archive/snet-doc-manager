@@ -39,6 +39,25 @@ const ProcessDocsButton = () => {
 
         const { docs, statusChangeResponse } = result;
         if (statusChangeResponse.length > 0) {
+
+          for (const changedDocId of statusChangeResponse) {
+            const changedDoc = docs.find((doc: any) => doc.google_id === changedDocId);
+  
+            if (changedDoc) {
+              // Delete the last copy from Google Drive
+              if (changedDoc.all_copy_ids.length > 0) {
+                const lastCopyId = changedDoc.all_copy_ids[changedDoc.all_copy_ids.length - 1];
+                await fetch('/.netlify/functions/deleteFileFromDrive', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ fileId: lastCopyId }),
+                });
+              }
+            }
+          }
+
           // Pass docs and statusChangeResponse to copyChangedDocs
           await fetch('/.netlify/functions/copyChangedDocs', {
             method: 'POST',

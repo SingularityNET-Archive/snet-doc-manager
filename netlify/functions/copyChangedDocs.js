@@ -57,13 +57,14 @@ export const handler = async (event, context) => {
     });
 
     const copiedDocs = [];
-
     for (const doc of changedDocsWithCopyIds) {
       if (!test) {
+
+        // Create a new copy
         const newDocId = await makeCopyOfDocument(doc.google_id);
         if (newDocId !== null) {
-          // Update the all_copy_ids array only if the copy operation was successful
-          const updatedCopyIds = [...doc.all_copy_ids, newDocId];
+          // Update the all_copy_ids array by removing the last copy and adding the new one
+          const updatedCopyIds = [...doc.all_copy_ids.slice(0, -1), newDocId];
           await supabaseAdmin
             .from('documents')
             .update({
