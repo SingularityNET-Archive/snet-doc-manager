@@ -124,8 +124,8 @@ async function commitSummariesToGitHub(docs) {
 export async function handler(event, context) {
   try {
     // Get the documents and test flag from the request body
-    const { docs, statusChangeResponse, test } = JSON.parse(event.body);
-    const docsToCommit = docs.filter(doc => statusChangeResponse.includes(doc.google_id));
+    const { docs, recentChangesResponse, test } = JSON.parse(event.body);
+    const docsToCommit = docs.filter(doc => recentChangesResponse.includes(doc.google_id));
     // Process each document
     if (!test) {
       // Process each document
