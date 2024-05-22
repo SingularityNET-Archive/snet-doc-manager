@@ -3,7 +3,7 @@ name: Get and Upload Summary Docs
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 0 *' # Runs every day at midnight
+    - cron: '0 0 * * *' # Runs every day at midnight
 
 jobs:
   get_and_upload_docs:
