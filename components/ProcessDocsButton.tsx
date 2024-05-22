@@ -14,7 +14,6 @@ const ProcessDocsButton = () => {
       if (!data || !Array.isArray(data)) {
         throw new Error('Invalid response from getAllDocs function');
       }
-
       const docs = data;
 
       // Break documents into batches
@@ -24,25 +23,41 @@ const ProcessDocsButton = () => {
         batches.push(docs.slice(i, i + batchSize));
       }
 
-      // Process each batch by calling your processDocs Netlify function
+      // Process each batch
       const processedResults = [];
       for (const batch of batches) {
-        const response = await fetch('/.netlify/functions/processDocs', {
+        // Call checkStatusChanges Netlify function
+        const statusChangeResponse = await fetch('/.netlify/functions/checkStatusChanges', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ docs: batch, test: false }),
-        });
-        const result = await response.json();
-        processedResults.push(result);
+        }).then((res) => res.json());
 
-        const { docs, statusChangeResponse } = result;
+        // Call checkRecentChanges Netlify function
+        const recentChangesResponse = await fetch('/.netlify/functions/checkRecentChanges', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docs: batch }),
+        }).then((res) => res.json());
+
+        // Call getDocComments Netlify function
+        const commentsResponse = await fetch('/.netlify/functions/getDocComments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docs: batch, test: false }),
+        }).then((res) => res.json());
+
+        processedResults.push({ statusChangeResponse, recentChangesResponse, commentsResponse });
+
         if (statusChangeResponse.length > 0) {
-
           for (const changedDocId of statusChangeResponse) {
-            const changedDoc = docs.find((doc: any) => doc.google_id === changedDocId);
-  
+            const changedDoc = batch.find((doc: any) => doc.google_id === changedDocId);
             if (changedDoc) {
               // Delete the last copy from Google Drive
               if (changedDoc.all_copy_ids.length > 0) {
@@ -64,7 +79,7 @@ const ProcessDocsButton = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ docs, statusChangeResponse, test: false }), // turn test to true if you dont want to make copies of documents
+            body: JSON.stringify({ docs: batch, statusChangeResponse, test: false }),
           });
 
           // Call getDocText Netlify function to retrieve and save document text for changed documents
@@ -75,15 +90,16 @@ const ProcessDocsButton = () => {
             },
             body: JSON.stringify({ docs: batch, statusChangeResponse, test: false }),
           });
+        }
 
+        if (recentChangesResponse.length > 0) {
           // Call getDocBodyAndCommitToGitHub Netlify function to commit document bodies to GitHub
-
           await fetch('/.netlify/functions/getDocBodyAndCommitToGitHub', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ docs: batch, statusChangeResponse, test: false }),
+            body: JSON.stringify({ docs: batch, recentChangesResponse, test: false }),
           });
         }
       }
