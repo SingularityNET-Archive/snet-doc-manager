@@ -22,7 +22,7 @@ export const handler = async (event, context) => {
     try {
       // Calculate the timestamp for 7 days ago
       const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 8);
       const sevenDaysAgoISOString = sevenDaysAgo.toISOString();
 
       // Retrieve the document metadata

@@ -5,7 +5,7 @@ export const handler = async (event, context) => {
   try {
     // Calculate the date 8 days ago
     const eightDaysAgo = new Date();
-    eightDaysAgo.setDate(eightDaysAgo.getDate() - 600);
+    eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
 
     const { data: docs, error } = await supabaseAdmin
       .from('meetingsummaries')
