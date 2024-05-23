@@ -10,66 +10,70 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get install -y jq
-        # Install any other necessary dependencies
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y jq
+          # Install any other necessary dependencies
 
-    - name: Fetch documents and process in batches
-      env:
-        NETLIFY_FUNCTION_URL: ${{ secrets.NETLIFY_FUNCTION_URL }}
-      run: |
-        # Make a call to your getAllDocs Netlify function
-        response=$(curl -s "${NETLIFY_FUNCTION_URL}/getAllDocs")
-        echo "Response from getAllDocs: $response"
+      - name: Fetch documents and process in batches
+        env:
+          NETLIFY_FUNCTION_URL: ${{ secrets.NETLIFY_FUNCTION_URL }}
+        run: |
+          # Make a call to your getAllDocs Netlify function
+          response=$(curl -s "${NETLIFY_FUNCTION_URL}/getAllDocs")
+          echo "Response from getAllDocs: $response"
 
-        # Check if the response is valid JSON
-        if ! echo "$response" | jq -e . >/dev/null 2>&1; then
-          echo "Error: Invalid JSON response from getAllDocs function"
-          exit 1
-        fi
-        docs=$(echo "$response" | jq -c '.')
+          # Check if the response is valid JSON
+          if ! echo "$response" | jq -e . >/dev/null 2>&1; then
+            echo "Error: Invalid JSON response from getAllDocs function"
+            exit 1
+          fi
 
-        # Break documents into batches
-        batch_size=10
-        batches=$(echo "$docs" | jq -c --argjson bs "$batch_size" 'range(0; length; $bs) as $i | .[$i:$i+$bs]')
+          docs=$(echo "$response" | jq -c '.')
 
-        # Process each batch
-        while IFS= read -r batch; do
-          # Call checkStatusChanges Netlify function
-          statusChangeResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/checkStatusChanges" | jq -r '.')
+          # Break documents into batches
+          batch_size=10
+          batches=$(echo "$docs" | jq -c --argjson bs "$batch_size" 'range(0; length; $bs) as $i | .[$i:$i+$bs]')
 
-          # Call checkRecentChanges Netlify function
-          recentChangesResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch}" "${NETLIFY_FUNCTION_URL}/checkRecentChanges" | jq -r '.')
+          # Process each batch
+          while IFS= read -r batch; do
+            # Call checkStatusChanges Netlify function
+            statusChangeResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/checkStatusChanges" | jq -r '.')
 
-          # Call getDocComments Netlify function
-          commentsResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocComments" | jq -r '.')
+            # Call checkRecentChanges Netlify function
+            recentChangesResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch}" "${NETLIFY_FUNCTION_URL}/checkRecentChanges" | jq -r '.')
 
-          echo "Processed results for batch: {\"statusChangeResponse\": $statusChangeResponse, \"recentChangesResponse\": $recentChangesResponse, \"commentsResponse\": $commentsResponse}"
+            # Call getDocComments Netlify function
+            commentsResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocComments" | jq -r '.')
 
-          if [ -n "$statusChangeResponse" ] && [ "$statusChangeResponse" != "[]" ]; then
-            for changedDocId in $(echo "$statusChangeResponse" | jq -r '.[]'); do
-              changedDoc=$(echo "$batch" | jq -r --arg id "$changedDocId" 'map(select(.google_id == $id)) | .[0]')
-              if [ -n "$changedDoc" ]; then
-                lastCopyId=$(echo "$changedDoc" | jq -r '.all_copy_ids[-1]')
-                if [ -n "$lastCopyId" ]; then
-                  curl -s -X POST -H "Content-Type: application/json" -d "{\"fileId\": \"$lastCopyId\"}" "${NETLIFY_FUNCTION_URL}/deleteFileFromDrive"
+            echo "Processed results for batch: {\"statusChangeResponse\": $statusChangeResponse, \"recentChangesResponse\": $recentChangesResponse, \"commentsResponse\": $commentsResponse}"
+
+            if [ -n "$statusChangeResponse" ] && [ "$statusChangeResponse" != "[]" ]; then
+              for changedDocId in $(echo "$statusChangeResponse" | jq -r '.[]'); do
+                changedDoc=$(echo "$batch" | jq -r --arg id "$changedDocId" 'map(select(.google_id == $id)) | .[0]')
+                if [ -n "$changedDoc" ]; then
+                  lastCopyId=$(echo "$changedDoc" | jq -r '.all_copy_ids[-1]')
+                  if [ -n "$lastCopyId" ]; then
+                    curl -s -X POST -H "Content-Type: application/json" -d "{\"fileId\": \"$lastCopyId\"}" "${NETLIFY_FUNCTION_URL}/deleteFileFromDrive"
+                  fi
                 fi
-              fi
-            done
+              done
 
-            # Pass docs and statusChangeResponse to copyChangedDocs
-            curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/copyChangedDocs"
+              # Pass docs and statusChangeResponse to copyChangedDocs
+              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/copyChangedDocs"
 
-            # Call getDocText Netlify function to retrieve and save document text for changed documents
-            curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocText"
-          fi
+              # Call getDocText Netlify function to retrieve and save document text for changed documents
+              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"statusChangeResponse\": $statusChangeResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocText"
+            fi
 
-          if [ -n "$recentChangesResponse" ] && [ "$recentChangesResponse" != "[]" ]; then
-            # Call getDocBodyAndCommitToGitHub Netlify function to commit document bodies to GitHub
-            curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"recentChangesResponse\": $recentChangesResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocBodyAndCommitToGitHub"
-          fi
-        done <<< "$batches"
+            # Call commitNonExistingDocs Netlify function to commit non-existing docs
+            curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/commitNonExistingDocs"
+
+            if [ -n "$recentChangesResponse" ] && [ "$recentChangesResponse" != "[]" ]; then
+              # Call getDocBodyAndCommitToGitHub Netlify function to commit document bodies to GitHub
+              curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"recentChangesResponse\": $recentChangesResponse, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocBodyAndCommitToGitHub"
+            fi
+          done <<< "$batches"
