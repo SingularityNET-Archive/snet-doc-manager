@@ -35,7 +35,7 @@ jobs:
           docs=$(echo "$response" | jq -c '.')
 
           # Break documents into batches
-          batch_size=10
+          batch_size=1
           batches=$(echo "$docs" | jq -c --argjson bs "$batch_size" 'range(0; length; $bs) as $i | .[$i:$i+$bs]')
 
           # Process each batch
