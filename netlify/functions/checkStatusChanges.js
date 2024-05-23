@@ -49,16 +49,16 @@ export const handler = async (event, context) => {
         fileId: doc.google_id,
         fields: "id, name, permissions(id, type, role)",
       });
-
+  
       // Determine the current sharing status based on permissions
       const currentStatus = determineSharingStatus(
         permissionsResponse.data.permissions
       );
-
+  
       // Compare current status with the last known status stored in your database
       const hasStatusChanged =
         doc.sharing_status === null || currentStatus !== doc.sharing_status;
-
+  
       if (hasStatusChanged && !test) {
         // Document sharing status has changed or was previously null, update the database
         await supabaseAdmin
@@ -68,18 +68,47 @@ export const handler = async (event, context) => {
             previous_sharing_status: doc.sharing_status,
           })
           .match({ google_id: doc.google_id });
+  
         console.log(
           `Updated sharing status for document ${doc.google_id} to ${currentStatus}`
         );
       }
-
+  
       // Return whether there was a change in sharing status or not
       return hasStatusChanged;
     } catch (error) {
       if (error.code === 403) {
         console.warn('Access denied for document:', doc.google_id);
+        
+        if (!test) {
+          // Update the sharing status to "access denied" in the database
+          await supabaseAdmin
+            .from("documents")
+            .update({
+              sharing_status: "access denied",
+              previous_sharing_status: doc.sharing_status,
+            })
+            .match({ google_id: doc.google_id });
+        }
+  
         // Return true if the document's current sharing status is null or not "view only"
         return doc.sharing_status === null || doc.sharing_status !== "view only";
+      } else if (error.code === 404) {
+        console.warn('File not found:', doc.google_id);
+        
+        if (!test) {
+          // Update the sharing status to "file not found" in the database
+          await supabaseAdmin
+            .from("documents")
+            .update({
+              sharing_status: "access denied",
+              previous_sharing_status: doc.sharing_status,
+            })
+            .match({ google_id: doc.google_id });
+        }
+  
+        // Return true to indicate that there was a change in the sharing status
+        return true;
       } else {
         console.error("Failed to check document for changes:", error);
         throw error; // Rethrow other errors

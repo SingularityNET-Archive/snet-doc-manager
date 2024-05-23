@@ -29,6 +29,9 @@ async function makeCopyOfDocument(docId) {
     if (error.code === 403) {
       console.warn('Access denied for document:', docId);
       return null; // Return null to indicate that the copy operation failed due to access denial
+    } else if (error.code === 404) {
+      console.warn('File not found:', docId);
+      return null; // Return null to indicate that the copy operation failed due to file not found
     } else {
       console.error("Failed to copy document:", error);
       throw error; // Rethrow other errors
@@ -57,9 +60,9 @@ export const handler = async (event, context) => {
     });
 
     const copiedDocs = [];
+
     for (const doc of changedDocsWithCopyIds) {
       if (!test) {
-
         // Create a new copy
         const newDocId = await makeCopyOfDocument(doc.google_id);
         if (newDocId !== null) {

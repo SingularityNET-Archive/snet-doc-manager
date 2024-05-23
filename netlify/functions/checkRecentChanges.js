@@ -19,7 +19,6 @@ export const handler = async (event, context) => {
 
   async function checkDocumentForRecentChanges(doc) {
     const drive = google.drive({ version: "v3", auth: oauth2Client });
-
     try {
       // Calculate the timestamp for 7 days ago
       const sevenDaysAgo = new Date();
@@ -38,8 +37,18 @@ export const handler = async (event, context) => {
 
       return hasRecentChanges;
     } catch (error) {
-      console.error("Failed to check document for recent changes:", error);
-      throw error;
+      if (error.code === 403) {
+        console.warn('Access denied for document:', doc.google_id);
+        // Return true to indicate that there was a change (access denied)
+        return true;
+      } else if (error.code === 404) {
+        console.warn('File not found:', doc.google_id);
+        // Return true to indicate that there was a change (file not found)
+        return true;
+      } else {
+        console.error("Failed to check document for recent changes:", error);
+        throw error; // Rethrow other errors
+      }
     }
   }
 
@@ -49,9 +58,9 @@ export const handler = async (event, context) => {
       changedDocs.push(doc.google_id);
     }
   }
-  console.log(
-    `Found changes in ${changedDocs}`
-  );
+
+  console.log(`Found changes in ${changedDocs}`);
+
   return {
     statusCode: 200,
     body: JSON.stringify(changedDocs),
