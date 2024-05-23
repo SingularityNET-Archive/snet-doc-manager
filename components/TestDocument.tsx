@@ -1,23 +1,22 @@
-// components/ProcessDocsButton.tsx
+// components/TestDocument.tsx
 import { useState } from 'react';
 
-const ProcessDocsButton = () => {
+const TestDocument = () => {
   const [loading, setLoading] = useState(false);
 
   const processDocuments = async () => {
     try {
-      // Make a call to your getAllDocs Netlify function
-      const response = await fetch('/.netlify/functions/getAllDocs');
-      const data = await response.json();
-
-      // Check if the response is valid
-      if (!data || !Array.isArray(data)) {
-        throw new Error('Invalid response from getAllDocs function');
-      }
-      const docs = data;
+      // Test document
+      const docs = [{
+        all_copy_ids: [],
+        doc_type: "googleDocs",
+        google_id: "1Z6FSHz4CmgVeKyva9ZmqqbMfw5lAeDfpF-ICuAWvSBM",
+        latest_copy_g_id: "",
+        sharing_status: "pending",
+      }];
 
       // Break documents into batches
-      const batchSize = 1;
+      const batchSize = 5;
       const batches = [];
       for (let i = 0; i < docs.length; i += batchSize) {
         batches.push(docs.slice(i, i + batchSize));
@@ -127,9 +126,9 @@ const ProcessDocsButton = () => {
 
   return (
     <button onClick={handleClick} disabled={loading}>
-      {loading ? 'Processing...' : 'Process Docs'}
+      {loading ? 'Processing...' : 'Test doc'}
     </button>
   );
 };
 
-export default ProcessDocsButton;
+export default TestDocument;

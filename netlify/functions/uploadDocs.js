@@ -7,12 +7,13 @@ export const handler = async (event, context) => {
     const categorizedLinks = JSON.parse(event.body);
 
     // Prepare the data for insertion into the documents table
-    const documentsData = Object.entries(categorizedLinks).flatMap(([docType, links]) =>
-      (links || []).map(link => {
-        const id = extractId(link, docType);
+    const documentsData = Object.entries(categorizedLinks).flatMap(([docType, docInfos]) =>
+      (docInfos || []).map(docInfo => {
+        const id = extractId(docInfo.doc_id, docType);
         return {
           google_id: id,
-          url: link,
+          url: docInfo.doc_id,
+          workgroup: docInfo.workgroup,
           sharing_status: 'pending',
           all_copy_ids: [],
           latest_copy_g_id: null,
@@ -21,8 +22,19 @@ export const handler = async (event, context) => {
       })
     );
 
+    // Filter out duplicate Google Docs within the same workgroup
+    const uniqueDocumentsData = Object.values(
+      documentsData.reduce((acc, doc) => {
+        const key = `${doc.google_id}_${doc.workgroup}`;
+        if (doc.doc_type !== 'googleDocs' || !acc[key]) {
+          acc[key] = doc;
+        }
+        return acc;
+      }, {})
+    );
+
     // Check for existing documents with the same google_id
-    const googleIds = documentsData.map(doc => doc.google_id);
+    const googleIds = uniqueDocumentsData.map(doc => doc.google_id);
     const { data: existingDocs, error: selectError } = await supabaseAdmin
       .from('documents')
       .select('google_id')
@@ -34,7 +46,7 @@ export const handler = async (event, context) => {
     }
 
     // Filter out documents that already exist
-    const newDocumentsData = documentsData.filter(
+    const newDocumentsData = uniqueDocumentsData.filter(
       doc => !(existingDocs || []).some(existingDoc => existingDoc.google_id === doc.google_id)
     );
 

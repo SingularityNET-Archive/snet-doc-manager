@@ -3,6 +3,7 @@ import type { NextPage } from "next";
 import styles from '../styles/home.module.css';
 import ProcessDocsButton from '../components/ProcessDocsButton';
 import GetNewDocs from '../components/GetNewDocs';
+import TestDocument from '../components/TestDocument';
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -16,6 +17,8 @@ const Home: NextPage = () => {
             <ProcessDocsButton />
             <br />
             <GetNewDocs />
+            <br />
+            <TestDocument />
           </div>
         </div>
       )}

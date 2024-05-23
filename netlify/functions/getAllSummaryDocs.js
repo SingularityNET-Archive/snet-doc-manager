@@ -5,7 +5,7 @@ export const handler = async (event, context) => {
   try {
     // Calculate the date 8 days ago
     const eightDaysAgo = new Date();
-    eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
+    eightDaysAgo.setDate(eightDaysAgo.getDate() - 600);
 
     const { data: docs, error } = await supabaseAdmin
       .from('meetingsummaries')
@@ -27,20 +27,21 @@ export const handler = async (event, context) => {
           workingDocs.forEach(workingDoc => {
             const link = workingDoc.link.trim();
             const domain = new URL(link).hostname;
+            const docInfo = { doc_id: link, workgroup: summary.workgroup };
             if (domain.includes('docs.google.com')) {
               if (link.includes('/document/')) {
-                acc.googleDocs.add(link);
+                acc.googleDocs.add(JSON.stringify(docInfo));
               } else if (link.includes('/spreadsheets/')) {
-                acc.googleSpreadsheets.add(link);
+                acc.googleSpreadsheets.add(JSON.stringify(docInfo));
               }
             } else if (domain.includes('miro.com')) {
-              acc.miroBoards.add(link);
+              acc.miroBoards.add(JSON.stringify(docInfo));
             } else if (domain.includes('medium.com')) {
-              acc.mediumArticles.add(link);
+              acc.mediumArticles.add(JSON.stringify(docInfo));
             } else if (domain.includes('youtube.com') || domain.includes('youtu.be')) {
-              acc.youTubeVideos.add(link);
+              acc.youTubeVideos.add(JSON.stringify(docInfo));
             } else {
-              acc.others.add(link);
+              acc.others.add(JSON.stringify(docInfo));
             }
           });
         }
@@ -55,9 +56,9 @@ export const handler = async (event, context) => {
       others: new Set(),
     });
 
-    // Convert the Sets to arrays before returning the response
-    const uniqueCategorizedLinks = Object.entries(categorizedLinks).reduce((acc, [category, links]) => {
-      acc[category] = Array.from(links);
+    // Convert the Sets to arrays of objects before returning the response
+    const uniqueCategorizedLinks = Object.entries(categorizedLinks).reduce((acc, [category, docInfoSet]) => {
+      acc[category] = Array.from(docInfoSet).map(docInfoString => JSON.parse(docInfoString));
       return acc;
     }, {});
 
