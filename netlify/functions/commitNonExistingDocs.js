@@ -93,14 +93,17 @@ async function getDocumentText(doc) {
 }
 
 async function commitNonExistingDocsToGitHub(docs) {
-    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-  
+  const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+  for (const doc of docs) {
     const existingDocIds = new Set();
+    const path = `Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs`;
+
     try {
       const { data: existingFiles } = await octokit.repos.getContent({
         owner: "SingularityNET-Archive",
         repo: "SingularityNET-Archive",
-        path: "Data/Docs/GoogleDocs",
+        path,
       });
       existingFiles.forEach((file) => {
         const docId = file.name.replace(".md", "");
@@ -111,22 +114,19 @@ async function commitNonExistingDocsToGitHub(docs) {
         throw error;
       }
     }
-  
-    for (const doc of docs) {
-      const path = `Data/Docs/GoogleDocs/${doc.google_id}.md`;
-  
-      if (!existingDocIds.has(doc.google_id)) {
-        const documentText = await getDocumentText(doc);
-        await octokit.repos.createOrUpdateFileContents({
-          owner: "SingularityNET-Archive",
-          repo: "SingularityNET-Archive",
-          path,
-          message: `Add document text for ${doc.google_id}`,
-          content: Buffer.from(documentText).toString('base64'),
-        });
-      }
+
+    if (!existingDocIds.has(doc.google_id)) {
+      const documentText = await getDocumentText(doc);
+      await octokit.repos.createOrUpdateFileContents({
+        owner: "SingularityNET-Archive",
+        repo: "SingularityNET-Archive",
+        path: `${path}/${doc.google_id}.md`,
+        message: `Add document text for ${doc.google_id}`,
+        content: Buffer.from(documentText).toString('base64'),
+      });
     }
   }
+}
   
   export async function handler(event, context) {
     try {

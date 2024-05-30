@@ -14,6 +14,7 @@ export const handler = async (event, context) => {
           google_id: id,
           url: docInfo.doc_id,
           workgroup: docInfo.workgroup,
+          entity: docInfo.entity,
           sharing_status: 'pending',
           all_copy_ids: [],
           latest_copy_g_id: null,

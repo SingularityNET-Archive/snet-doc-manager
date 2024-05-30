@@ -27,7 +27,11 @@ export const handler = async (event, context) => {
           workingDocs.forEach(workingDoc => {
             const link = workingDoc.link.trim();
             const domain = new URL(link).hostname;
-            const docInfo = { doc_id: link, workgroup: summary.workgroup };
+            const docInfo = { 
+              doc_id: link, 
+              workgroup: summary.workgroup.replace(/\s+/g, '-'),
+              entity: 'Snet-Ambassador-Program' 
+            };
             if (domain.includes('docs.google.com')) {
               if (link.includes('/document/')) {
                 acc.googleDocs.add(JSON.stringify(docInfo));
