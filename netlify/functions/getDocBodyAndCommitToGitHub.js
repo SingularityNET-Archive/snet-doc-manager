@@ -96,7 +96,7 @@ async function commitSummariesToGitHub(docs) {
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
   for (const doc of docs) {
     const documentText = await getDocumentText(doc);
-    const path = `Data/Docs/GoogleDocs/${doc.google_id}.md`;
+    const path = `Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs/${doc.google_id}.md`;
     let currentSHA = null;
     try {
       const { data: currentFile } = await octokit.repos.getContent({

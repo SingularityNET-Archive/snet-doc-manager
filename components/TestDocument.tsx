@@ -10,9 +10,11 @@ const TestDocument = () => {
       const docs = [{
         all_copy_ids: [],
         doc_type: "googleDocs",
-        google_id: "1Z6FSHz4CmgVeKyva9ZmqqbMfw5lAeDfpF-ICuAWvSBM",
+        google_id: "115c9r867HDV711v7cgu-thL6chfUHtK6Fhu6qVwA6es",
         latest_copy_g_id: "",
         sharing_status: "pending",
+        workgroup: "Test-Workgroup",
+        entity: "Tests"
       }];
 
       // Break documents into batches
