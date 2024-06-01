@@ -46,10 +46,7 @@ jobs:
             # Call checkRecentChanges Netlify function
             recentChangesResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch}" "${NETLIFY_FUNCTION_URL}/checkRecentChanges" | jq -r '.')
 
-            # Call getDocComments Netlify function
-            commentsResponse=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"docs\": $batch, \"test\": false}" "${NETLIFY_FUNCTION_URL}/getDocComments" | jq -r '.')
-
-            echo "Processed results for batch: {\"statusChangeResponse\": $statusChangeResponse, \"recentChangesResponse\": $recentChangesResponse, \"commentsResponse\": $commentsResponse}"
+            echo "Processed results for batch: {\"statusChangeResponse\": $statusChangeResponse, \"recentChangesResponse\": $recentChangesResponse }"
 
             # Process status changes
             if [ -n "$statusChangeResponse" ] && [ "$statusChangeResponse" != "[]" ]; then
