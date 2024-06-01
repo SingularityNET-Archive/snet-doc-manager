@@ -44,16 +44,7 @@ const ProcessDocsButton = () => {
           body: JSON.stringify({ docs: batch }),
         }).then((res) => res.json());
 
-        // Call getDocComments Netlify function
-        const commentsResponse = await fetch('/.netlify/functions/getDocComments', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ docs: batch, test: false }),
-        }).then((res) => res.json());
-
-        processedResults.push({ statusChangeResponse, recentChangesResponse, commentsResponse });
+        processedResults.push({ statusChangeResponse, recentChangesResponse });
 
         if (statusChangeResponse.length > 0) {
           for (const changedDocId of statusChangeResponse) {
