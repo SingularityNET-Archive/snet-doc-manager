@@ -100,10 +100,40 @@ const ProcessDocsButton = () => {
           },
           body: JSON.stringify({ docs: batch, test: false }),
         });
+        // Call commitNonExistingComments Netlify function to commit non-existing docs
+        await fetch('/.netlify/functions/commitNonExistingComments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docs: batch, test: false }),
+        });
+        // Call commitNonExistingDocsWithComments Netlify function to commit non-existing docs
+        await fetch('/.netlify/functions/commitNonExistingDocsWithComments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docs: batch, test: false }),
+        });
 
         if (recentChangesResponse.length > 0) {
           // Call getDocBodyAndCommitToGitHub Netlify function to commit document bodies to GitHub
           await fetch('/.netlify/functions/getDocBodyAndCommitToGitHub', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ docs: batch, recentChangesResponse, test: false }),
+          });
+          await fetch('/.netlify/functions/getDocCommentsAndCommitToGitHub', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ docs: batch, recentChangesResponse, test: false }),
+          });
+          await fetch('/.netlify/functions/getDocBodyAndCommentsAndCommitToGitHub', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
