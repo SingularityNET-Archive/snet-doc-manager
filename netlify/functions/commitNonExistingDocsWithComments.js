@@ -1,7 +1,7 @@
-// netlify/functions/commitNonExistingDocs.js
+// netlify/functions/commitNonExistingDocsWithComments.js
 import { google } from 'googleapis';
 import { Octokit } from '@octokit/rest';
-import { getDocumentText } from '../../utils/getDocumentText';
+import { getDocumentTextAndComments } from '../../utils/getDocumentTextAndComments';
 
 const client_id = process.env.GOOGLE_CLIENT_ID;
 const client_secret = process.env.GOOGLE_CLIENT_SECRET;
@@ -38,13 +38,13 @@ async function commitNonExistingDocsToGitHub(docs) {
     }
 
     if (!existingDocIds.has(doc.google_id)) {
-      const documentText = await getDocumentText(doc);
+      const textWithComments = await getDocumentTextAndComments(doc);
       await octokit.repos.createOrUpdateFileContents({
         owner: "SingularityNET-Archive",
         repo: "SingularityNET-Archive",
-        path: `${path}/doc-text-only.md`,
+        path: `${path}/doc-with-comments.md`,
         message: `Add document text for ${doc.google_id}`,
-        content: Buffer.from(documentText).toString('base64'),
+        content: Buffer.from(textWithComments).toString('base64'),
       });
     }
   }
