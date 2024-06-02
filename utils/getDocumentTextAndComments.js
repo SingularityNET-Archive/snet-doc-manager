@@ -28,8 +28,8 @@ export async function getDocumentTextAndComments(doc) {
       const content = response.data.body.content;
       const commentsData = commentsResponse.data.comments;
   
-      console.log('Document ID:', doc.google_id);
-      console.log('Comments Data:', commentsData);
+      //console.log('Document ID:', doc.google_id);
+      //console.log('Comments Data:', commentsData);
   
       let docText = '';
       let isTitleFound = false;
@@ -104,17 +104,17 @@ export async function getDocumentTextAndComments(doc) {
             return false;
           });
   
-          console.log('Paragraph Start Index:', element.startIndex);
-          console.log('Paragraph End Index:', element.endIndex);
-          console.log('Associated Comments:', comments);
+          //console.log('Paragraph Start Index:', element.startIndex);
+          //console.log('Paragraph End Index:', element.endIndex);
+          //console.log('Associated Comments:', comments);
   
-          // Log comment details
+          /*// Log comment details
           commentsData.forEach((comment) => {
             console.log('Comment ID:', comment.id);
             console.log('Comment Content:', comment.content);
             console.log('Comment QuotedFileContent:', comment.quotedFileContent ? comment.quotedFileContent : 'N/A');
             console.log('---');
-          });
+          });*/
   
           // Add comments to the paragraph text
           if (filteredComments.length > 0) {

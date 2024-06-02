@@ -23,8 +23,8 @@ export async function getDocumentComments(doc) {
   
       const commentsData = commentsResponse.data.comments;
   
-      console.log('Document ID:', doc.google_id);
-      console.log('Comments Data:', commentsData);
+      //console.log('Document ID:', doc.google_id);
+      //console.log('Comments Data:', commentsData);
   
       let commentsText = '';
   
