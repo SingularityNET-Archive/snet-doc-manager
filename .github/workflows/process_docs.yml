@@ -50,13 +50,13 @@ jobs:
 
             # Process status changes
             if [ -n "$statusChangeResponse" ] && [ "$statusChangeResponse" != "[]" ]; then
-              # Delete last copy from Google Drive for changed docs
+              # Delete first copy from Google Drive for changed docs
               for changedDocId in $(echo "$statusChangeResponse" | jq -r '.[]'); do
                 changedDoc=$(echo "$batch" | jq -r --arg id "$changedDocId" 'map(select(.google_id == $id)) | .[0]')
                 if [ -n "$changedDoc" ]; then
-                  lastCopyId=$(echo "$changedDoc" | jq -r '.all_copy_ids[-1]')
-                  if [ -n "$lastCopyId" ]; then
-                    curl -s -X POST -H "Content-Type: application/json" -d "{\"fileId\": \"$lastCopyId\"}" "${NETLIFY_FUNCTION_URL}/deleteFileFromDrive"
+                  if [ "$(echo "$changedDoc" | jq -r '.all_copy_ids | length')" -gt 2 ]; then
+                    firstCopyId=$(echo "$changedDoc" | jq -r '.all_copy_ids[0]')
+                    curl -s -X POST -H "Content-Type: application/json" -d "{\"fileId\": \"$firstCopyId\"}" "${NETLIFY_FUNCTION_URL}/deleteFileFromDrive"
                   fi
                 fi
               done
