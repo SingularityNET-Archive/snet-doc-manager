@@ -50,9 +50,9 @@ const ProcessDocsButton = () => {
           for (const changedDocId of statusChangeResponse) {
             const changedDoc = batch.find((doc: any) => doc.google_id === changedDocId);
             if (changedDoc) {
-              // Delete the last copy from Google Drive
-              if (changedDoc.all_copy_ids.length > 0) {
-                const lastCopyId = changedDoc.all_copy_ids[changedDoc.all_copy_ids.length - 1];
+              // Delete the first copy from Google Drive
+              if (changedDoc.all_copy_ids.length > 2) {
+                const lastCopyId = changedDoc.all_copy_ids[0];
                 await fetch('/.netlify/functions/deleteFileFromDrive', {
                   method: 'POST',
                   headers: {

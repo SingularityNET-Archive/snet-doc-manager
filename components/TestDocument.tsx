@@ -8,7 +8,10 @@ const TestDocument = () => {
     try {
       // Test document
       const docs = [{
-        all_copy_ids: [],
+        all_copy_ids: [
+          "1eGGomRx1voTpp_WfjLQqO5IVSrBSGc0gngVkcSx940k",
+          "16HmDiG8b8Qbb4FKQOg2S4g3t4fgKKqA8AMsmYZDYMzQ",
+          "1r7N9Kb3iQCFq2VwB9hOVGvv4VYKAFh99x7DdNXeVhaI"],
         doc_type: "googleDocs",
         google_id: "1uebknjv2fZVFEOnTZFex_u6IWQoddDLEZq9o_U01pU8",
         latest_copy_g_id: "",
@@ -18,7 +21,7 @@ const TestDocument = () => {
       }];
 
       // Break documents into batches
-      const batchSize = 5;
+      const batchSize = 1;
       const batches = [];
       for (let i = 0; i < docs.length; i += batchSize) {
         batches.push(docs.slice(i, i + batchSize));
@@ -51,9 +54,9 @@ const TestDocument = () => {
           for (const changedDocId of statusChangeResponse) {
             const changedDoc = batch.find((doc: any) => doc.google_id === changedDocId);
             if (changedDoc) {
-              // Delete the last copy from Google Drive
-              if (changedDoc.all_copy_ids.length > 0) {
-                const lastCopyId = changedDoc.all_copy_ids[changedDoc.all_copy_ids.length - 1];
+              // Delete the first copy from Google Drive
+              if (changedDoc.all_copy_ids.length > 2) {
+                const lastCopyId = changedDoc.all_copy_ids[0];
                 await fetch('/.netlify/functions/deleteFileFromDrive', {
                   method: 'POST',
                   headers: {

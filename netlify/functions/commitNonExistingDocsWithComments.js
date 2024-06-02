@@ -39,13 +39,18 @@ async function commitNonExistingDocsToGitHub(docs) {
 
     if (!existingDocIds.has(doc.google_id)) {
       const textWithComments = await getDocumentTextAndComments(doc);
-      await octokit.repos.createOrUpdateFileContents({
-        owner: "SingularityNET-Archive",
-        repo: "SingularityNET-Archive",
-        path: `${path}/doc-with-comments.md`,
-        message: `Add document text for ${doc.google_id}`,
-        content: Buffer.from(textWithComments).toString('base64'),
-      });
+      // Check if the generated Markdown content includes comments
+      if (textWithComments.includes('> [Comments]')) {
+        await octokit.repos.createOrUpdateFileContents({
+          owner: "SingularityNET-Archive",
+          repo: "SingularityNET-Archive",
+          path: `${path}/doc-with-comments.md`,
+          message: `Add document text and comments for ${doc.google_id}`,
+          content: Buffer.from(textWithComments).toString('base64'),
+        });
+      } else {
+        console.log(`No comments found for document ${doc.google_id}. Skipping commit.`);
+      }
     }
   }
 }
