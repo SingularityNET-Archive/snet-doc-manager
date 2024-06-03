@@ -1,4 +1,5 @@
 // netlify/functions/commitNonExistingDocsWithComments.js
+// Wont commit files where the comment's context has changed and is not present in the doc anymore
 import { google } from 'googleapis';
 import { Octokit } from '@octokit/rest';
 import { getDocumentTextAndComments } from '../../utils/getDocumentTextAndComments';
@@ -18,7 +19,7 @@ async function commitNonExistingDocsToGitHub(docs) {
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
   for (const doc of docs) {
-    const existingDocIds = new Set();
+    const existingFileNames = new Set();
     const path = `Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs/${doc.google_id}`;
 
     try {
@@ -28,8 +29,8 @@ async function commitNonExistingDocsToGitHub(docs) {
         path,
       });
       existingFiles.forEach((file) => {
-        const docId = file.name.replace(".md", "");
-        existingDocIds.add(docId);
+        const fileName = file.name.replace(".md", "");
+        existingFileNames.add(fileName);
       });
     } catch (error) {
       if (error.status !== 404) {
@@ -37,7 +38,7 @@ async function commitNonExistingDocsToGitHub(docs) {
       }
     }
 
-    if (!existingDocIds.has(doc.google_id)) {
+    if (!existingFileNames.has("doc-with-comments")) {
       const textWithComments = await getDocumentTextAndComments(doc);
       // Check if the generated Markdown content includes comments
       if (textWithComments.includes('> [Comments]')) {

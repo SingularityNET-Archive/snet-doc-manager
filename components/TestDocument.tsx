@@ -9,15 +9,15 @@ const TestDocument = () => {
       // Test document
       const docs = [{
         all_copy_ids: [
-          "1eGGomRx1voTpp_WfjLQqO5IVSrBSGc0gngVkcSx940k",
-          "16HmDiG8b8Qbb4FKQOg2S4g3t4fgKKqA8AMsmYZDYMzQ",
-          "1r7N9Kb3iQCFq2VwB9hOVGvv4VYKAFh99x7DdNXeVhaI"],
+          "1hziG50xEZHpaED9pLJBTUAfkmL_4mbARXHZa3Wss3gY",
+          "12-1XiH_j1LNbndDp5i5D28QdNYi_G8vDr1wtRJ1PnIg",
+          "18m4McJPQWFs5r8S-WnR0QE0lKpexUZHoUKvqOAzcob4"],
         doc_type: "googleDocs",
         google_id: "1uebknjv2fZVFEOnTZFex_u6IWQoddDLEZq9o_U01pU8",
         latest_copy_g_id: "",
         sharing_status: "pending",
-        workgroup: "Test-Workgroup",
-        entity: "Tests"
+        workgroup: "Onboarding-Workgroup",
+        entity: "Snet-Ambassador-Program"
       }];
 
       // Break documents into batches

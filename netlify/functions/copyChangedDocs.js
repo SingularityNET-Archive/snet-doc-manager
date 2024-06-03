@@ -14,23 +14,58 @@ const oauth2Client = new google.auth.OAuth2(
 );
 oauth2Client.setCredentials({ refresh_token: refreshToken });
 
-async function makeCopyOfDocument(docId) {
+async function getFolderId(folderPath) {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const folderNames = folderPath.split('/');
+
+  let parentFolderId = 'root';
+  for (const folderName of folderNames) {
+    const response = await drive.files.list({
+      q: `mimeType = 'application/vnd.google-apps.folder' and trashed = false and name = '${folderName}' and '${parentFolderId}' in parents`,
+      fields: 'files(id)',
+    });
+
+    if (response.data.files.length === 0) {
+      // Folder not found, create it
+      const folder = await drive.files.create({
+        requestBody: {
+          name: folderName,
+          mimeType: 'application/vnd.google-apps.folder',
+          parents: [parentFolderId],
+        },
+        fields: 'id',
+      });
+      parentFolderId = folder.data.id;
+    } else {
+      // Folder exists, update the parent folder ID
+      parentFolderId = response.data.files[0].id;
+    }
+  }
+
+  return parentFolderId;
+}
+
+async function makeCopyOfDocument(doc) {
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
   try {
+    const folderPath = `copies-of-documents/${doc.entity}/${doc.workgroup}`;
+    const folderId = await getFolderId(folderPath);
+
     const response = await drive.files.copy({
-      fileId: docId,
+      fileId: doc.google_id,
       requestBody: {
-        name: 'Copy of ' + docId, // You might want to customize the copied document's name
+        name: 'Copy of ' + doc.google_id,
+        parents: [folderId],
       },
     });
     console.log("Copied document ID:", response.data.id);
     return response.data.id;
   } catch (error) {
     if (error.code === 403) {
-      console.warn('Access denied for document:', docId);
+      console.warn('Access denied for document:', doc.google_id);
       return null; // Return null to indicate that the copy operation failed due to access denial
     } else if (error.code === 404) {
-      console.warn('File not found:', docId);
+      console.warn('File not found:', doc.google_id);
       return null; // Return null to indicate that the copy operation failed due to file not found
     } else {
       console.error("Failed to copy document:", error);
@@ -53,10 +88,7 @@ export const handler = async (event, context) => {
   try {
     const changedDocsWithCopyIds = statusChangeResponse.map((changedDocId) => {
       const changedDoc = docs.find((doc) => doc.google_id === changedDocId);
-      return {
-        google_id: changedDoc.google_id,
-        all_copy_ids: changedDoc.all_copy_ids,
-      };
+      return changedDoc; // Return the entire changedDoc object
     });
 
     const copiedDocs = [];
@@ -64,7 +96,7 @@ export const handler = async (event, context) => {
     for (const doc of changedDocsWithCopyIds) {
       if (!test) {
         // Create a new copy
-        const newDocId = await makeCopyOfDocument(doc.google_id);
+        const newDocId = await makeCopyOfDocument(doc); // Pass the entire doc object
         if (newDocId !== null) {
           // Update the all_copy_ids array by keeping the last two copies and adding the new one
           const updatedCopyIds = [...doc.all_copy_ids.slice(-2), newDocId].slice(-3);

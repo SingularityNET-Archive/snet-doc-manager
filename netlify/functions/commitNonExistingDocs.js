@@ -18,7 +18,7 @@ async function commitNonExistingDocsToGitHub(docs) {
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
   for (const doc of docs) {
-    const existingDocIds = new Set();
+    const existingFileNames = new Set();
     const path = `Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs/${doc.google_id}`;
 
     try {
@@ -28,8 +28,8 @@ async function commitNonExistingDocsToGitHub(docs) {
         path,
       });
       existingFiles.forEach((file) => {
-        const docId = file.name.replace(".md", "");
-        existingDocIds.add(docId);
+        const fileName = file.name.replace(".md", "");
+        existingFileNames.add(fileName);
       });
     } catch (error) {
       if (error.status !== 404) {
@@ -37,7 +37,7 @@ async function commitNonExistingDocsToGitHub(docs) {
       }
     }
 
-    if (!existingDocIds.has(doc.google_id)) {
+    if (!existingFileNames.has("doc-text-only")) {
       const documentText = await getDocumentText(doc);
       await octokit.repos.createOrUpdateFileContents({
         owner: "SingularityNET-Archive",
