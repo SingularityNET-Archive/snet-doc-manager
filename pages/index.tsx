@@ -4,6 +4,7 @@ import styles from '../styles/home.module.css';
 import ProcessDocsButton from '../components/ProcessDocsButton';
 import GetNewDocs from '../components/GetNewDocs';
 import TestDocument from '../components/TestDocument';
+import ProcessUpdates from "../components/ProcessUpdates";
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -19,6 +20,8 @@ const Home: NextPage = () => {
             <GetNewDocs />
             <br />
             <TestDocument />
+            <br />
+            <ProcessUpdates />
           </div>
         </div>
       )}

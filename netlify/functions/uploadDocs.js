@@ -19,6 +19,7 @@ export const handler = async (event, context) => {
           all_copy_ids: [],
           latest_copy_g_id: null,
           doc_type: docType,
+          workingDoc: docInfo.workingDoc,
         };
       })
     );
@@ -52,21 +53,36 @@ export const handler = async (event, context) => {
     );
 
     // Insert the new documents data into the documents table
-    const { data: insertedDocs, error: insertError } = await supabaseAdmin
-      .from('documents')
-      .insert(newDocumentsData);
+    for (const doc of newDocumentsData) {
+      if (doc.doc_type === 'googleDocs') {
+        // Fetch the title for Google Docs
+        const titleResponse = await fetch('/.netlify/functions/getGoogleDocTitle', {
+          method: 'POST',
+          body: JSON.stringify({ googleDocId: doc.google_id }),
+        });
+        const { title } = await titleResponse.json();
+        doc.title = title;
+      } else {
+        // Use the title from workingDoc.title for other doc types
+        doc.title = doc.workingDoc.title;
+      }
 
-    if (insertError) {
-      console.error('Error inserting documents:', insertError);
-      return { statusCode: 500, body: JSON.stringify({ error: insertError.message }) };
+      const { data: insertedDoc, error: insertError } = await supabaseAdmin
+        .from('documents')
+        .insert(doc);
+
+      if (insertError) {
+        console.error('Error inserting document:', insertError);
+        return { statusCode: 500, body: JSON.stringify({ error: insertError.message }) };
+      }
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: 'New documents uploaded successfully',
-        inserted: (insertedDocs || []).length,
-        skipped: documentsData.length - (insertedDocs || []).length,
+        inserted: newDocumentsData.length,
+        skipped: documentsData.length - newDocumentsData.length,
       }),
     };
   } catch (error) {
