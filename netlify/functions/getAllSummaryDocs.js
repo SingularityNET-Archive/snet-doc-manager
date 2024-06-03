@@ -30,7 +30,8 @@ export const handler = async (event, context) => {
             const docInfo = { 
               doc_id: link, 
               workgroup: summary.workgroup.replace(/\s+/g, '-'),
-              entity: 'Snet-Ambassador-Program' 
+              entity: 'Snet-Ambassador-Program',
+              workingDoc: workingDoc 
             };
             if (domain.includes('docs.google.com')) {
               if (link.includes('/document/')) {
