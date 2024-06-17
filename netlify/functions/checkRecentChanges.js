@@ -1,17 +1,9 @@
 // checkRecentChanges.js
 import { google } from "googleapis";
+import { getOAuth2Client } from '../../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
-const client_id = process.env.GOOGLE_CLIENT_ID;
-const client_secret = process.env.GOOGLE_CLIENT_SECRET;
-const redirect_uris = process.env.GOOGLE_REDIRECT_URI;
-const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
-
-const oauth2Client = new google.auth.OAuth2(
-  client_id,
-  client_secret,
-  redirect_uris
-);
-oauth2Client.setCredentials({ refresh_token: refreshToken });
+const oauth2Client = getOAuth2Client();
 
 export const handler = async (event, context) => {
   const { docs } = JSON.parse(event.body);
@@ -39,15 +31,20 @@ export const handler = async (event, context) => {
     } catch (error) {
       if (error.code === 403) {
         console.warn('Access denied for document:', doc.google_id);
-        // Return true to indicate that there was a change (access denied)
+        await sendErrorMessageToDiscord(`Access denied for document: ${doc.google_id}`);
         return true;
       } else if (error.code === 404) {
         console.warn('File not found:', doc.google_id);
-        // Return true to indicate that there was a change (file not found)
+        await sendErrorMessageToDiscord(`File not found: ${doc.google_id}`);
         return true;
+      } else if (error.code === 401 && error.message.includes('invalid_grant')) {
+        console.error('Refresh token expired. Please obtain a new refresh token.');
+        await sendErrorMessageToDiscord('Google Refresh Token Expired. Please obtain a new refresh token.');
+        throw error;
       } else {
-        console.error("Failed to check document for recent changes:", error);
-        throw error; // Rethrow other errors
+        console.error('Failed to check document for recent changes:', error);
+        await sendErrorMessageToDiscord(`Failed to check document for recent changes: ${error.message}`);
+        throw error;
       }
     }
   }

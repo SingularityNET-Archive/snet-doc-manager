@@ -1,16 +1,9 @@
 // utils/getDocumentComments.js
 import { google } from 'googleapis';
+import { getOAuth2Client } from '../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../utils/discordWebhook';
 
-const client_id = process.env.GOOGLE_CLIENT_ID;
-const client_secret = process.env.GOOGLE_CLIENT_SECRET;
-const redirect_uris = process.env.GOOGLE_REDIRECT_URI;
-const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
-const oauth2Client = new google.auth.OAuth2(
-  client_id,
-  client_secret,
-  redirect_uris
-);
-oauth2Client.setCredentials({ refresh_token: refreshToken });
+const oauth2Client = getOAuth2Client();
 
 export async function getDocumentComments(doc) {
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
@@ -57,10 +50,20 @@ export async function getDocumentComments(doc) {
     } catch (error) {
       if (error.code === 403) {
         console.warn('Access denied for document:', doc.google_id);
-        return ''; // Return an empty string or any other default value you prefer
+        await sendErrorMessageToDiscord(`Access denied for document: ${doc.google_id}`);
+        return true;
+      } else if (error.code === 404) {
+        console.warn('File not found:', doc.google_id);
+        await sendErrorMessageToDiscord(`File not found: ${doc.google_id}`);
+        return true;
+      } else if (error.code === 401 && error.message.includes('invalid_grant')) {
+        console.error('Refresh token expired. Please obtain a new refresh token.');
+        await sendErrorMessageToDiscord('Google Refresh Token Expired. Please obtain a new refresh token.');
+        throw error;
       } else {
-        console.error('Error retrieving document comments:', error);
-        throw error; // Rethrow other errors
+        console.error('Failed to retrieve document comments:', error);
+        await sendErrorMessageToDiscord(`Failed to retrieve document comments ${doc.google_id}: ${error.message}`);
+        throw error;
       }
     }
   }

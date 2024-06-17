@@ -1,18 +1,6 @@
 // netlify/functions/getDocBodyAndCommitToGitHub.js
-import { google } from 'googleapis';
 import { Octokit } from '@octokit/rest';
 import { getDocumentText } from '../../utils/getDocumentText';
-
-const client_id = process.env.GOOGLE_CLIENT_ID;
-const client_secret = process.env.GOOGLE_CLIENT_SECRET;
-const redirect_uris = process.env.GOOGLE_REDIRECT_URI;
-const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
-const oauth2Client = new google.auth.OAuth2(
-  client_id,
-  client_secret,
-  redirect_uris
-);
-oauth2Client.setCredentials({ refresh_token: refreshToken });
 
 async function commitDocumentTextToGitHub(docs) {
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
