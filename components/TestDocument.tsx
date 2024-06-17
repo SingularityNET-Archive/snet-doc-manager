@@ -9,9 +9,9 @@ const TestDocument = () => {
       // Test document
       const docs = [{
         all_copy_ids: [
-          "12-1XiH_j1LNbndDp5i5D28QdNYi_G8vDr1wtRJ1PnIg",
           "18m4McJPQWFs5r8S-WnR0QE0lKpexUZHoUKvqOAzcob4",
-          "16nAlMnZIWbsfqYt1FbczyCrzLst7Q-6w24feybqZGPg"],
+          "16nAlMnZIWbsfqYt1FbczyCrzLst7Q-6w24feybqZGPg",
+          "1Qqer0fb6f2BYz9s6y3dwF6HQN2Qau5j8aNwqOZJ5hC4"],
         doc_type: "googleDocs",
         google_id: "1uebknjv2fZVFEOnTZFex_u6IWQoddDLEZq9o_U01pU8",
         latest_copy_g_id: "",

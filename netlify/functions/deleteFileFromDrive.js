@@ -1,6 +1,7 @@
 // deleteFileFromDrive.js
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
@@ -26,6 +27,7 @@ export const handler = async (event, context) => {
     };
   } catch (error) {
     console.error('Error deleting file:', error);
+    await sendErrorMessageToDiscord(`Failed to delete document ${doc.google_id}: ${error.message}`);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Internal Server Error' }),

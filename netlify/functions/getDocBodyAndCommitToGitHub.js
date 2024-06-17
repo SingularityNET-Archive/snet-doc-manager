@@ -1,5 +1,4 @@
 // netlify/functions/getDocBodyAndCommitToGitHub.js
-import { google } from 'googleapis';
 import { Octokit } from '@octokit/rest';
 import { getDocumentText } from '../../utils/getDocumentText';
 

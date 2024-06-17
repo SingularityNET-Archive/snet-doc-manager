@@ -1,6 +1,7 @@
 // utils/getDocumentText.js
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
@@ -75,10 +76,20 @@ export async function getDocumentText(doc) {
     } catch (error) {
       if (error.code === 403) {
         console.warn('Access denied for document:', doc.google_id);
-        return ''; // Return an empty string or any other default value you prefer
+        await sendErrorMessageToDiscord(`Access denied for document: ${doc.google_id}`);
+        return true;
+      } else if (error.code === 404) {
+        console.warn('File not found:', doc.google_id);
+        await sendErrorMessageToDiscord(`File not found: ${doc.google_id}`);
+        return true;
+      } else if (error.code === 401 && error.message.includes('invalid_grant')) {
+        console.error('Refresh token expired. Please obtain a new refresh token.');
+        await sendErrorMessageToDiscord('Google Refresh Token Expired. Please obtain a new refresh token.');
+        throw error;
       } else {
-        console.error('Error retrieving document text:', error);
-        throw error; // Rethrow other errors
+        console.error('Failed to retrieve document text:', error);
+        await sendErrorMessageToDiscord(`Failed to retrieve document text ${doc.google_id}: ${error.message}`);
+        throw error;
       }
     }
   }

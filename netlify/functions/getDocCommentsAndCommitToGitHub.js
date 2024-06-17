@@ -1,5 +1,4 @@
 // netlify/functions/getDocBodyAndCommentsAndCommitToGitHub.js
-import { google } from 'googleapis';
 import { Octokit } from '@octokit/rest';
 import { getDocumentComments } from '../../utils/getDocumentComments';
 

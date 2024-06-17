@@ -2,6 +2,7 @@
 import { google } from 'googleapis';
 import { supabaseAdmin } from '../../lib/supabaseClient';
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
@@ -54,13 +55,20 @@ async function makeCopyOfDocument(doc) {
   } catch (error) {
     if (error.code === 403) {
       console.warn('Access denied for document:', doc.google_id);
-      return null; // Return null to indicate that the copy operation failed due to access denial
+      await sendErrorMessageToDiscord(`Access denied for document: ${doc.google_id}`);
+      return true;
     } else if (error.code === 404) {
       console.warn('File not found:', doc.google_id);
-      return null; // Return null to indicate that the copy operation failed due to file not found
+      await sendErrorMessageToDiscord(`File not found: ${doc.google_id}`);
+      return true;
+    } else if (error.code === 401 && error.message.includes('invalid_grant')) {
+      console.error('Refresh token expired. Please obtain a new refresh token.');
+      await sendErrorMessageToDiscord('Google Refresh Token Expired. Please obtain a new refresh token.');
+      throw error;
     } else {
-      console.error("Failed to copy document:", error);
-      throw error; // Rethrow other errors
+      console.error('Failed to copy document:', error);
+      await sendErrorMessageToDiscord(`Failed to check document for recent changes ${doc.google_id}: ${error.message}`);
+      throw error;
     }
   }
 }

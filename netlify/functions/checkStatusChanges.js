@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "../../lib/supabaseClient";
 import { google } from "googleapis";
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
@@ -70,6 +71,7 @@ export const handler = async (event, context) => {
     } catch (error) {
       if (error.code === 403) {
         console.warn('Access denied for document:', doc.google_id);
+        await sendErrorMessageToDiscord(`Access denied for document: ${doc.google_id}`);
         
         if (!test) {
           // Update the sharing status to "access denied" in the database
@@ -86,7 +88,8 @@ export const handler = async (event, context) => {
         return doc.sharing_status === null || doc.sharing_status !== "view only";
       } else if (error.code === 404) {
         console.warn('File not found:', doc.google_id);
-        
+        await sendErrorMessageToDiscord(`File not found: ${doc.google_id}`);
+
         if (!test) {
           // Update the sharing status to "file not found" in the database
           await supabaseAdmin
@@ -100,8 +103,13 @@ export const handler = async (event, context) => {
   
         // Return true to indicate that there was a change in the sharing status
         return true;
+      } else if (error.code === 401 && error.message.includes('invalid_grant')) {
+        console.error('Refresh token expired. Please obtain a new refresh token.');
+        await sendErrorMessageToDiscord('Google Refresh Token Expired. Please obtain a new refresh token.');
+        throw error;
       } else {
         console.error("Failed to check document for changes:", error);
+        await sendErrorMessageToDiscord(`Failed to check document for recent changes: ${error.message}`);
         throw error; // Rethrow other errors
       }
     }

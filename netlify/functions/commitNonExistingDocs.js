@@ -1,5 +1,4 @@
 // netlify/functions/commitNonExistingDocs.js
-import { google } from 'googleapis';
 import { Octokit } from '@octokit/rest';
 import { getDocumentText } from '../../utils/getDocumentText';
 

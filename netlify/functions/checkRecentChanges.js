@@ -1,6 +1,7 @@
 // checkRecentChanges.js
 import { google } from "googleapis";
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
@@ -30,15 +31,20 @@ export const handler = async (event, context) => {
     } catch (error) {
       if (error.code === 403) {
         console.warn('Access denied for document:', doc.google_id);
-        // Return true to indicate that there was a change (access denied)
+        await sendErrorMessageToDiscord(`Access denied for document: ${doc.google_id}`);
         return true;
       } else if (error.code === 404) {
         console.warn('File not found:', doc.google_id);
-        // Return true to indicate that there was a change (file not found)
+        await sendErrorMessageToDiscord(`File not found: ${doc.google_id}`);
         return true;
+      } else if (error.code === 401 && error.message.includes('invalid_grant')) {
+        console.error('Refresh token expired. Please obtain a new refresh token.');
+        await sendErrorMessageToDiscord('Google Refresh Token Expired. Please obtain a new refresh token.');
+        throw error;
       } else {
-        console.error("Failed to check document for recent changes:", error);
-        throw error; // Rethrow other errors
+        console.error('Failed to check document for recent changes:', error);
+        await sendErrorMessageToDiscord(`Failed to check document for recent changes: ${error.message}`);
+        throw error;
       }
     }
   }
