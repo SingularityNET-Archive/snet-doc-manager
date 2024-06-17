@@ -1,17 +1,8 @@
 // deleteFileFromDrive.js
 import { google } from 'googleapis';
+import { getOAuth2Client } from '../../utils/oauth2Client';
 
-const client_id = process.env.GOOGLE_CLIENT_ID;
-const client_secret = process.env.GOOGLE_CLIENT_SECRET;
-const redirect_uris = process.env.GOOGLE_REDIRECT_URI;
-const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
-
-const oauth2Client = new google.auth.OAuth2(
-  client_id,
-  client_secret,
-  redirect_uris
-);
-oauth2Client.setCredentials({ refresh_token: refreshToken });
+const oauth2Client = getOAuth2Client();
 
 export const handler = async (event, context) => {
   const { fileId } = JSON.parse(event.body);
