@@ -1,47 +1,44 @@
 name: Get and Upload Summary Docs
-
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight
-
 jobs:
   get_and_upload_docs:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
     - name: Install dependencies
       run: |
         sudo apt-get install -y jq
         # Install any other necessary dependencies
-
     - name: Get and upload summary docs
       env:
         NETLIFY_FUNCTION_URL: ${{ secrets.NETLIFY_FUNCTION_URL }}
       run: |
         # Make a call to your getAllSummaryDocs Netlify function
         response=$(curl -s "${NETLIFY_FUNCTION_URL}/getAllSummaryDocs")
-
         echo "Response from getAllSummaryDocs: $response"
-
         # Check if the response is valid JSON
         if ! echo "$response" | jq -e . >/dev/null 2>&1; then
           echo "Error: Invalid JSON response from getAllSummaryDocs function"
           exit 1
         fi
-
         categorized_links=$(echo "$response" | jq -c '.')
-
         # Make a call to your uploadDocs Netlify function
         upload_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$categorized_links" "${NETLIFY_FUNCTION_URL}/uploadDocs")
-
         echo "Upload response: $upload_response"
-
         # Check if the upload response is valid JSON
         if ! echo "$upload_response" | jq -e . >/dev/null 2>&1; then
           echo "Error: Invalid JSON response from uploadDocs function"
+          exit 1
+        fi
+        # Make a call to your updateDocTitles Netlify function
+        update_titles_response=$(curl -s "${NETLIFY_FUNCTION_URL}/updateDocTitles")
+        echo "Update titles response: $update_titles_response"
+        # Check if the update titles response is valid JSON
+        if ! echo "$update_titles_response" | jq -e . >/dev/null 2>&1; then
+          echo "Error: Invalid JSON response from updateDocTitles function"
           exit 1
         fi
