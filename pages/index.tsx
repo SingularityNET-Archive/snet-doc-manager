@@ -11,20 +11,7 @@ const Home: NextPage = () => {
 
   return (
     <div className={styles.container}>
-      {!loading && (
-        <div>
-          <div>
-            <h1>Snet Document Manager</h1>
-            <ProcessDocsButton />
-            <br />
-            <GetNewDocs />
-            <br />
-            <TestDocument />
-            <br />
-            <ProcessUpdates />
-          </div>
-        </div>
-      )}
+      Ola
     </div>
   );
 };
