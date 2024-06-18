@@ -1,5 +1,5 @@
 // getAllDocs.js
-import { supabaseAdmin } from '../../lib/supabaseClient';
+import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 
 export const handler = async (event, context) => {
   try {

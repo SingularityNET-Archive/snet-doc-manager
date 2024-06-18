@@ -21,6 +21,10 @@ const GetNewDocs = () => {
       const uploadData = await uploadResponse.json();
       console.log("Upload response:", uploadData);
 
+      // Make a call to your getAllSummaryDocs Netlify function
+      const result = await fetch('/.netlify/functions/updateDocTitles');
+      console.log("result.json()", result.json());
+
     } catch (error) {
       console.error('Error:', error);
     } finally {

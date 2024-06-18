@@ -1,5 +1,5 @@
 // uploadDocs.js
-import { supabaseAdmin } from '../../lib/supabaseClient';
+import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 
 export const handler = async (event, context) => {
   try {
@@ -54,18 +54,6 @@ export const handler = async (event, context) => {
 
     // Insert the new documents data into the documents table
     for (const doc of newDocumentsData) {
-      if (doc.doc_type === 'googleDocs') {
-        // Fetch the title for Google Docs
-        const titleResponse = await fetch('/.netlify/functions/getGoogleDocTitle', {
-          method: 'POST',
-          body: JSON.stringify({ googleDocId: doc.google_id }),
-        });
-        const { title } = await titleResponse.json();
-        doc.title = title;
-      } else {
-        // Use the title from workingDoc.title for other doc types
-        doc.title = doc.workingDoc.title;
-      }
 
       const { data: insertedDoc, error: insertError } = await supabaseAdmin
         .from('documents')

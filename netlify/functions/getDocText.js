@@ -1,6 +1,6 @@
 // getDocText.js
 import { google } from 'googleapis';
-import { supabaseAdmin } from '../../lib/supabaseClient';
+import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 import { getOAuth2Client } from '../../utils/oauth2Client';
 import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 

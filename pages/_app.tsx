@@ -1,10 +1,12 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Nav from '../components/nav';
+import { MyVariableProvider } from '../context/MyVariableContext';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-      <div>
+    <MyVariableProvider>
+        <div>
           <div>
               <Nav />
           </div>
@@ -12,6 +14,7 @@ function MyApp({ Component, pageProps }: AppProps) {
               <Component {...pageProps} />
           </div>
       </div>
+    </MyVariableProvider>
   );
 }
 
