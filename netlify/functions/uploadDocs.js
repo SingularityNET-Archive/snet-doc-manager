@@ -19,7 +19,7 @@ export const handler = async (event, context) => {
           all_copy_ids: [],
           latest_copy_g_id: null,
           doc_type: docType,
-          workingDoc: docInfo.workingDoc,
+          title: docInfo.workingDoc.title,
         };
       })
     );
