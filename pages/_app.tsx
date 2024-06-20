@@ -6,13 +6,13 @@ import { MyVariableProvider } from '../context/MyVariableContext';
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <MyVariableProvider>
+      <div className="main"> {/* Add className here */}
         <div>
-          <div>
-              <Nav />
-          </div>
-          <div>
-              <Component {...pageProps} />
-          </div>
+          <Nav />
+        </div>
+        <div className="component">
+          <Component {...pageProps} />
+        </div>
       </div>
     </MyVariableProvider>
   );
