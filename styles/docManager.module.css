@@ -39,3 +39,57 @@
 .dropdown {
     margin-bottom: 1em;
 }
+
+.buttonGroup {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1em;
+}
+
+.toggleButton {
+  padding: 0.5em 1em;
+  margin: 0 0.5em;
+  border: 1px solid #0f1325;
+  background-color: #0f1325;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.toggleButton.active {
+  background-color: #0f1325;
+  color: #fff;
+  border: 2px solid #c5c9d9;
+}
+
+.toggleButton:hover {
+  background-color: #1f2852;
+  color: #fff;
+}
+
+.addDocument {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .addDocument input,
+  .addDocument select {
+    padding: 0.5em;
+    font-size: 1em;
+  }
+  
+  .addDocument button {
+    padding: 0.5em 1em;
+    font-size: 1em;
+    background-color: #0f1325;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .addDocument button:hover {
+    background-color: #1a2040;
+  }

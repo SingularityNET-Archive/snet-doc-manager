@@ -1,7 +1,9 @@
-// ../pages/doc-manager/index.tsx
+// pages/doc-manager/index.tsx
 import { useState, useEffect } from "react";
 import type { NextPage } from "next";
 import styles from '../../styles/docManager.module.css';
+import DocumentTable from '../../components/doc-manager/DocumentTable';
+import AddDocument from '../../components/doc-manager/AddDocument';
 
 interface Document {
   google_id: string;
@@ -10,6 +12,7 @@ interface Document {
   entity: string;
   sharing_status: string;
   url: string;
+  doc_type: string;
 }
 
 const DocManager: NextPage = () => {
@@ -17,13 +20,14 @@ const DocManager: NextPage = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedEntity, setSelectedEntity] = useState<string>("All");
   const [selectedWorkgroup, setSelectedWorkgroup] = useState<string>("All");
-  const [newDocUrl, setNewDocUrl] = useState<string>("");
+  const [showAddDocument, setShowAddDocument] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchDocuments() {
       setLoading(true);
       const response = await fetch('/.netlify/functions/getAllDocs');
       const data = await response.json();
+      console.log(data);
       setDocuments(data);
       setLoading(false);
     }
@@ -43,6 +47,19 @@ const DocManager: NextPage = () => {
     return acc;
   }, {} as { [entity: string]: { [workgroup: string]: Document[] } });
 
+  // Get unique entities
+  const uniqueEntities = Array.from(new Set(documents.map(doc => doc.entity))).sort();
+
+  // Get unique doc types
+  const uniqueDocTypes = Array.from(new Set(documents.map(doc => doc.doc_type))).sort();
+
+  // Function to get workgroups for a specific entity
+  const getWorkgroupsForEntity = (entity: string) => {
+    return entity && groupedDocuments[entity] 
+      ? Object.keys(groupedDocuments[entity]).sort()
+      : [];
+  };
+
   // Get unique entities and workgroups
   const entities = ["All", ...Object.keys(groupedDocuments)];
   const workgroups = selectedEntity && selectedEntity !== "All" 
@@ -51,16 +68,16 @@ const DocManager: NextPage = () => {
 
   // Filter and sort documents based on selected entity and workgroup
   const filteredDocuments = selectedEntity === "All"
-  ? [...documents].sort((a, b) => {
-      if (a.entity === b.entity) {
-        return a.workgroup.localeCompare(b.workgroup);
-      }
-      return a.entity.localeCompare(b.entity);
-    })
-  : [...documents]
-      .filter(doc => doc.entity === selectedEntity)
-      .sort((a, b) => a.workgroup.localeCompare(b.workgroup))
-      .filter(doc => selectedWorkgroup === "All" || doc.workgroup === selectedWorkgroup);
+    ? [...documents].sort((a, b) => {
+        if (a.entity === b.entity) {
+          return a.workgroup.localeCompare(b.workgroup);
+        }
+        return a.entity.localeCompare(b.entity);
+      })
+    : [...documents]
+        .filter(doc => doc.entity === selectedEntity)
+        .sort((a, b) => a.workgroup.localeCompare(b.workgroup))
+        .filter(doc => selectedWorkgroup === "All" || doc.workgroup === selectedWorkgroup);
 
   // Function to handle button click and log document values
   const handleButtonClick = (doc: Document) => {
@@ -69,9 +86,18 @@ const DocManager: NextPage = () => {
   };
 
   // Function to handle adding a new document
-  const handleAddDocument = () => {
-    console.log("New document URL:", newDocUrl);
-    // Perform any other desired actions with the new document URL
+  const handleAddDocument = (newDoc: {
+    url: string;
+    title: string;
+    entity: string;
+    workgroup: string;
+  }) => {
+    console.log("New document:", newDoc);
+    // Here you would typically add the new document to your documents state
+    // and possibly send it to your backend
+    // For example:
+    // setDocuments([...documents, { ...newDoc, google_id: generateId(), sharing_status: "private" }]);
+    //setShowAddDocument(false); // Switch back to document table view after adding
   };
 
   return (
@@ -81,88 +107,64 @@ const DocManager: NextPage = () => {
         <p>Loading documents...</p>
       ) : (
         <>
-          <div className={styles.dropdown}>
-            <label htmlFor="entity-select">Entity: </label>
-            <select
-              id="entity-select"
-              value={selectedEntity}
-              onChange={(e) => {
-                setSelectedEntity(e.target.value);
-                setSelectedWorkgroup("All");
-              }}
+          <div className={styles.buttonGroup}>
+            <button
+              className={`${styles.toggleButton} ${!showAddDocument ? styles.active : ''}`}
+              onClick={() => setShowAddDocument(false)}
             >
-              {entities.map((entity) => (
-                <option key={entity} value={entity}>
-                  {entity}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.dropdown}>
-            <label htmlFor="workgroup-select">Workgroup: </label>
-            <select
-              id="workgroup-select"
-              value={selectedWorkgroup}
-              onChange={(e) => setSelectedWorkgroup(e.target.value)}
-              disabled={selectedEntity === "All"}
+              View Documents
+            </button>
+            <button
+              className={`${styles.toggleButton} ${showAddDocument ? styles.active : ''}`}
+              onClick={() => setShowAddDocument(true)}
             >
-              {workgroups.map((workgroup) => (
-                <option key={workgroup} value={workgroup}>
-                  {workgroup}
-                </option>
-              ))}
-            </select>
+              Add New Document
+            </button>
           </div>
-          <div className={styles.addDocument}>
-            <input
-              type="text"
-              placeholder="Enter document URL"
-              value={newDocUrl}
-              onChange={(e) => setNewDocUrl(e.target.value)}
+          {showAddDocument ? (
+            <AddDocument 
+              onAddDocument={handleAddDocument} 
+              entities={uniqueEntities}
+              getWorkgroupsForEntity={getWorkgroupsForEntity}
+              docTypes={uniqueDocTypes}  // Add this line
             />
-            <button onClick={handleAddDocument}>Add Document</button>
-          </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Workgroup</th>
-                <th>Entity</th>
-                <th>Sharing Status</th>
-                <th>Link</th>
-                <th>Archives</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDocuments.map((doc) => (
-                <tr key={doc.google_id}>
-                  <td>{doc.title}</td>
-                  <td>{doc.workgroup}</td>
-                  <td>{doc.entity}</td>
-                  <td>{doc.sharing_status}</td>
-                  <td>
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className={styles.link}>
-                      Open
-                    </a>
-                  </td>
-                  <td>
-                    <a
-                      href={`https://github.com/SingularityNET-Archive/SingularityNET-Archive/tree/main/Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs/${doc.google_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.link}
-                    >
-                      GitHub
-                    </a>
-                  </td>
-                  <td>
-                    <button onClick={() => handleButtonClick(doc)}>Action</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          ) : (
+            <>
+              <div className={styles.dropdown}>
+                <label htmlFor="entity-select">Entity: </label>
+                <select
+                  id="entity-select"
+                  value={selectedEntity}
+                  onChange={(e) => {
+                    setSelectedEntity(e.target.value);
+                    setSelectedWorkgroup("All");
+                  }}
+                >
+                  {entities.map((entity) => (
+                    <option key={entity} value={entity}>
+                      {entity}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.dropdown}>
+                <label htmlFor="workgroup-select">Workgroup: </label>
+                <select
+                  id="workgroup-select"
+                  value={selectedWorkgroup}
+                  onChange={(e) => setSelectedWorkgroup(e.target.value)}
+                  disabled={selectedEntity === "All"}
+                >
+                  {workgroups.map((workgroup) => (
+                    <option key={workgroup} value={workgroup}>
+                      {workgroup}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <DocumentTable documents={filteredDocuments} onActionClick={handleButtonClick} />
+            </>
+          )}
         </>
       )}
     </div>
