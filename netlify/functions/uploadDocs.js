@@ -1,4 +1,4 @@
-// uploadDocs.js
+// ../netlify/functions/uploadDocs.js
 import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 
 export const handler = async (event, context) => {

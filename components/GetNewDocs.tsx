@@ -12,7 +12,7 @@ const GetNewDocs = () => {
       const response = await fetch('/.netlify/functions/getAllSummaryDocs');
       const categorizedLinks = await response.json();
       console.log("docs", categorizedLinks);
-
+/*
       // Make a call to your uploadDocs Netlify function
       const uploadResponse = await fetch('/.netlify/functions/uploadDocs', {
         method: 'POST',
@@ -24,7 +24,7 @@ const GetNewDocs = () => {
       // Make a call to your getAllSummaryDocs Netlify function
       const result = await fetch('/.netlify/functions/updateDocTitles');
       console.log("result.json()", result.json());
-
+*/
     } catch (error) {
       console.error('Error:', error);
     } finally {

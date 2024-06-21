@@ -4,6 +4,7 @@ import type { NextPage } from "next";
 import styles from '../../styles/docManager.module.css';
 import DocumentTable from '../../components/doc-manager/DocumentTable';
 import AddDocument from '../../components/doc-manager/AddDocument';
+import { processNewDocument } from '../../utils/processNewDocument';
 
 interface Document {
   google_id: string;
@@ -86,18 +87,75 @@ const DocManager: NextPage = () => {
   };
 
   // Function to handle adding a new document
-  const handleAddDocument = (newDoc: {
+  const handleAddDocument = async (newDoc: {
     url: string;
     title: string;
     entity: string;
     workgroup: string;
+    doc_type: string;
+    google_id: string;
   }) => {
     console.log("New document:", newDoc);
-    // Here you would typically add the new document to your documents state
-    // and possibly send it to your backend
-    // For example:
-    // setDocuments([...documents, { ...newDoc, google_id: generateId(), sharing_status: "private" }]);
-    //setShowAddDocument(false); // Switch back to document table view after adding
+    
+    // Create the document object in the required structure
+    const docForUpload = {
+      [newDoc.doc_type]: [{
+        doc_id: newDoc.url,
+        entity: newDoc.entity,
+        workgroup: newDoc.workgroup,
+        workingDoc: {
+          link: newDoc.url,
+          title: newDoc.title
+        }
+      }]
+    };
+
+    try {
+      // Upload the new document to the database
+      const response = await fetch('/.netlify/functions/uploadDocs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(docForUpload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload document');
+      }
+
+      const result = await response.json();
+      console.log('Upload result:', result);
+
+      // If the upload was successful, add the new document to the local state
+      if (result.inserted > 0) {
+        const fullNewDoc = {
+          google_id: newDoc.google_id,
+          url: newDoc.url,
+          title: newDoc.title,
+          entity: newDoc.entity,
+          workgroup: newDoc.workgroup,
+          doc_type: newDoc.doc_type,
+          sharing_status: 'pending',
+          all_copy_ids: [],
+          latest_copy_g_id: null,
+        };
+
+        setDocuments(prevDocs => [...prevDocs, fullNewDoc]);
+
+        if (fullNewDoc.doc_type == 'googleDocs') {
+          // Process the new document
+          await processNewDocument(fullNewDoc);
+        }
+
+        //setShowAddDocument(false); // Switch back to document table view after adding
+      } else {
+        console.warn('Document was not inserted. It may already exist in the database.');
+      }
+    } catch (error) {
+      console.error('Error adding new document:', error);
+      // Here you might want to show an error message to the user
+    }
   };
 
   return (
