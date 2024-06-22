@@ -1,4 +1,4 @@
-// netlify/functions/commitNonExistingDocsWithComments.js
+// ../netlify/functions/commitNonExistingDocsWithComments.js
 // Wont commit files where the comment's context has changed and is not present in the doc anymore
 import { Octokit } from '@octokit/rest';
 import { getDocumentTextAndComments } from '../../utils/getDocumentTextAndComments';

@@ -1,4 +1,4 @@
-// updateDocTitles.js
+// ../netlify/functions/updateDocTitles.js
 import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../../utils/oauth2Client';

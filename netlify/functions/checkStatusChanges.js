@@ -1,4 +1,4 @@
-// checkStatusChanges.js
+// ../netlify/functions/checkStatusChanges.js
 import { supabaseAdmin } from "../../lib/supabaseServerSideClient";
 import { google } from "googleapis";
 import { getOAuth2Client } from '../../utils/oauth2Client';

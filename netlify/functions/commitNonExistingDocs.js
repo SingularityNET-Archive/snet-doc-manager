@@ -1,4 +1,4 @@
-// netlify/functions/commitNonExistingDocs.js
+// ../netlify/functions/commitNonExistingDocs.js
 import { Octokit } from '@octokit/rest';
 import { getDocumentText } from '../../utils/getDocumentText';
 
