@@ -32,6 +32,7 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
   const [isNewWorkgroup, setIsNewWorkgroup] = useState(false);
   const [isNewDocType, setIsNewDocType] = useState(false);
   const [workgroups, setWorkgroups] = useState<string[]>([]);
+  const hardcodedDocTypes = ['googleSpreadsheets', 'googleSlides', 'youTubeVideos', 'mediumArticles','miroBoards', 'others'];
 
   useEffect(() => {
     if (newDoc.entity && !isNewEntity) {
@@ -136,7 +137,10 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
       />
       <select name="doc_type" onChange={handleDocTypeChange} value={isNewDocType ? 'new' : newDoc.doc_type}>
         <option value="">Select document type</option>
-        {docTypes.map(type => (
+        {docTypes.filter(type => !hardcodedDocTypes.includes(type)).map(type => (
+          <option key={type} value={type}>{type}</option>
+        ))}
+        {hardcodedDocTypes.map(type => (
           <option key={type} value={type}>{type}</option>
         ))}
         <option value="new">Add new document type</option>

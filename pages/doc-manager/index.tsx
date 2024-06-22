@@ -81,9 +81,17 @@ const DocManager: NextPage = () => {
         .filter(doc => selectedWorkgroup === "All" || doc.workgroup === selectedWorkgroup);
 
   // Function to handle button click and log document values
-  const handleButtonClick = (doc: Document) => {
-    console.log(doc);
+  const handleButtonClick = async (doc: Document) => {
+    // Pass docs and statusChangeResponse to copyChangedDocs
+    const result = await fetch('/.netlify/functions/createManualCopyOfGoogleDoc', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ docs: [doc], test: false }),
+    });
     // Perform any other desired actions with the document values
+    console.log(doc, result);
   };
 
   // Function to handle adding a new document

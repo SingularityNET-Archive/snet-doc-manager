@@ -1,4 +1,4 @@
-// netlify/functions/getDocCommitsAndCreateMarkdown.js
+// ../netlify/functions/getDocCommitsAndCreateMarkdown.js
 import { Octokit } from '@octokit/rest';
 
 async function getDocCommits(doc) {

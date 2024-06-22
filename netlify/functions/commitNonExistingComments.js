@@ -1,4 +1,4 @@
-// netlify/functions/commitNonExistingComments.js
+// ../netlify/functions/commitNonExistingComments.js
 import { Octokit } from '@octokit/rest';
 import { getDocumentComments } from '../../utils/getDocumentComments';
 

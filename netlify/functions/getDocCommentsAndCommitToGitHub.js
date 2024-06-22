@@ -1,4 +1,4 @@
-// netlify/functions/getDocBodyAndCommentsAndCommitToGitHub.js
+// ../netlify/functions/getDocBodyAndCommentsAndCommitToGitHub.js
 import { Octokit } from '@octokit/rest';
 import { getDocumentComments } from '../../utils/getDocumentComments';
 

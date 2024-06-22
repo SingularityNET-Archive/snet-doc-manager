@@ -1,4 +1,4 @@
-// getAllSummaryDocs.js
+// ../netlify/functions/getAllSummaryDocs.js
 import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 
 export const handler = async (event, context) => {

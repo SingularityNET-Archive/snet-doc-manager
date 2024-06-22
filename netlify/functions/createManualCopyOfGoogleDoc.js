@@ -1,6 +1,5 @@
-// ../netlify/functions/copyChangedDocs.js
+// ../netlify/functions/createManualCopyOfGoogleDoc.js
 import { google } from 'googleapis';
-import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 import { getOAuth2Client } from '../../utils/oauth2Client';
 import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
@@ -40,13 +39,13 @@ async function getFolderId(folderPath) {
 async function makeCopyOfDocument(doc) {
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
   try {
-    const folderPath = `copies-of-documents/${doc.entity}/${doc.workgroup}`;
+    const folderPath = `manual-copies-of-documents/${doc.entity}/${doc.workgroup}`;
     const folderId = await getFolderId(folderPath);
 
     const response = await drive.files.copy({
       fileId: doc.google_id,
       requestBody: {
-        name: 'Copy of ' + doc.google_id,
+        name: 'Manual Copy of ' + doc.google_id,
         parents: [folderId],
       },
     });
@@ -74,42 +73,28 @@ async function makeCopyOfDocument(doc) {
 }
 
 export const handler = async (event, context) => {
-  const { docs, statusChangeResponse, test } = JSON.parse(event.body);
+  const { docs, test } = JSON.parse(event.body);
 
-  if (!docs || !statusChangeResponse) {
-    console.error('Missing docs or statusChangeResponse in the request body');
+  if (!docs) {
+    console.error('Missing docs in the request body');
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Bad Request: Missing docs or statusChangeResponse' }),
+      body: JSON.stringify({ error: 'Bad Request: Missing docs' }),
     };
   }
 
   try {
-    const changedDocsWithCopyIds = statusChangeResponse.map((changedDocId) => {
-      const changedDoc = docs.find((doc) => doc.google_id === changedDocId);
-      return changedDoc; // Return the entire changedDoc object
-    });
 
     const copiedDocs = [];
 
-    for (const doc of changedDocsWithCopyIds) {
+    for (const doc of docs) {
       if (!test) {
         // Create a new copy
         const newDocId = await makeCopyOfDocument(doc); // Pass the entire doc object
         if (newDocId !== null) {
-          // Update the all_copy_ids array by keeping the last two copies and adding the new one
-          const updatedCopyIds = [...doc.all_copy_ids.slice(-2), newDocId].slice(-3);
-          await supabaseAdmin
-            .from('documents')
-            .update({
-              latest_copy_g_id: newDocId,
-              all_copy_ids: updatedCopyIds,
-            })
-            .eq('google_id', doc.google_id);
           copiedDocs.push({
             google_id: doc.google_id,
             new_copy_id: newDocId,
-            all_copy_ids: updatedCopyIds,
           });
         }
       }

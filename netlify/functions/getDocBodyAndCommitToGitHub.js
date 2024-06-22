@@ -1,4 +1,4 @@
-// netlify/functions/getDocBodyAndCommitToGitHub.js
+// ../netlify/functions/getDocBodyAndCommitToGitHub.js
 import { Octokit } from '@octokit/rest';
 import { getDocumentText } from '../../utils/getDocumentText';
 
