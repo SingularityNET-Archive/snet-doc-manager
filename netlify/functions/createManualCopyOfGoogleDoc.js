@@ -39,14 +39,28 @@ async function getFolderId(folderPath) {
 async function makeCopyOfDocument(doc) {
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
   try {
-    const folderPath = `manual-copies-of-documents/${doc.entity}/${doc.workgroup}`;
+    const folderPath = `manual-copies-of-documents/${doc.entity}/${doc.workgroup}/${doc.google_id}`;
     const folderId = await getFolderId(folderPath);
+
+    // Generate the current date in the required format
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    }).replace(/ /g, '-');
 
     const response = await drive.files.copy({
       fileId: doc.google_id,
       requestBody: {
-        name: 'Manual Copy of ' + doc.google_id,
+        name: `${formattedDate}-copy-of-${doc.title}`,
         parents: [folderId],
+        properties: {
+          'originalDocId': doc.google_id,
+          'entity': doc.entity,
+          'workgroup': doc.workgroup
+        },
+        description: 'This is a snapshot of the original document. Please do not edit this document.',
       },
     });
     console.log("Copied document ID:", response.data.id);

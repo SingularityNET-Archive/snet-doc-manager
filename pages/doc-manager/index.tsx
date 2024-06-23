@@ -82,16 +82,59 @@ const DocManager: NextPage = () => {
 
   // Function to handle button click and log document values
   const handleButtonClick = async (doc: Document) => {
-    // Pass docs and statusChangeResponse to copyChangedDocs
-    const result = await fetch('/.netlify/functions/createManualCopyOfGoogleDoc', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ docs: [doc], test: false }),
-    });
-    // Perform any other desired actions with the document values
-    console.log(doc, result);
+    try {
+      // Step 1: Create a manual copy of the Google Doc
+      const copyResult = await fetch('/.netlify/functions/createManualCopyOfGoogleDoc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ docs: [doc], test: false }),
+      });
+  
+      if (!copyResult.ok) {
+        throw new Error('Failed to create manual copy');
+      }
+  
+      const copyData = await copyResult.json();
+      console.log('Copy result:', copyData);
+  
+      if (copyData.copied_docs && copyData.copied_docs.length > 0) {
+        const newDocId = copyData.copied_docs[0].new_copy_id;
+  
+        // Step 2: Add headers and footers to the new copy
+        const currentDate = new Date();
+        const formattedDate = currentDate.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        }).replace(/ /g, '-');
+  
+        const headersFootersResult = await fetch('/.netlify/functions/addHeadersAndFooters', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            documentId: newDocId,
+            formattedDate: formattedDate,
+            originalDocId: doc.google_id
+          }),
+        });
+  
+        if (!headersFootersResult.ok) {
+          throw new Error('Failed to add headers and footers');
+        }
+  
+        const headersFootersData = await headersFootersResult.json();
+        console.log('Headers and footers result:', headersFootersData);
+  
+        // You might want to update the UI or state here to reflect the changes
+      }
+    } catch (error) {
+      console.error('Error in handleButtonClick:', error);
+      // Handle the error appropriately (e.g., show an error message to the user)
+    }
   };
 
   // Function to handle adding a new document
