@@ -1,5 +1,5 @@
 // components/doc-manager/DocumentTable.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import styles from '../../styles/docManager.module.css';
 
 interface Document {
@@ -14,10 +14,16 @@ interface Document {
 
 interface DocumentTableProps {
   documents: Document[];
-  onActionClick: (doc: Document) => void;
+  onActionClick: (doc: Document, rationale: string) => void;
 }
 
 const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick }) => {
+  const [rationales, setRationales] = useState<{ [key: string]: string }>({});
+
+  const handleRationaleChange = (docId: string, value: string) => {
+    setRationales(prev => ({ ...prev, [docId]: value }));
+  };
+
   return (
     <table className={styles.table}>
       <thead>
@@ -28,7 +34,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick 
           <th>Sharing Status</th>
           <th>Link</th>
           <th>Archives</th>
-          <th>Action</th>
+          <th>Rationale</th>
+          <th>Archive</th>
         </tr>
       </thead>
       <tbody>
@@ -54,7 +61,17 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick 
               </a>
             </td>
             <td>
-              <button onClick={() => onActionClick(doc)}>Action</button>
+              <input
+                type="text"
+                value={rationales[doc.google_id] || ''}
+                onChange={(e) => handleRationaleChange(doc.google_id, e.target.value)}
+                placeholder="Enter rationale"
+              />
+            </td>
+            <td>
+              <button onClick={() => onActionClick(doc, rationales[doc.google_id] || '')}>
+                Create Archive Copy
+              </button>
             </td>
           </tr>
         ))}

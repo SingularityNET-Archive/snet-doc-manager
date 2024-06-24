@@ -47,7 +47,7 @@ const Nav = () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        redirectTo: 'http://localhost:8888/',
+        redirectTo: 'https://snet-doc-manager.netlify.app/',
       },
     })
   }

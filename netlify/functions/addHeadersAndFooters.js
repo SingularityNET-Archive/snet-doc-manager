@@ -58,7 +58,7 @@ export const handler = async (event, context) => {
                 segmentId: headerId,
                 index: 0
               },
-              text: `Snapshot taken on ${formattedDate}\n`
+              text: `Archive Copy created on ${formattedDate}\n`
             }
           },
           {
