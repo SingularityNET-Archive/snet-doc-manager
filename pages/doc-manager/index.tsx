@@ -81,56 +81,97 @@ const DocManager: NextPage = () => {
         .filter(doc => selectedWorkgroup === "All" || doc.workgroup === selectedWorkgroup);
 
   // Function to handle button click and log document values
-  const handleButtonClick = async (doc: Document) => {
+  const handleButtonClick = async (doc: Document, rationale: string) => {
     try {
-      // Step 1: Create a manual copy of the Google Doc
-      const copyResult = await fetch('/.netlify/functions/createManualCopyOfGoogleDoc', {
+      // Step 1: Create the folder
+      const folderPath = `manual-copies-of-documents/${doc.entity}/${doc.workgroup}/${doc.google_id}`;
+      const folderResponse = await fetch('/.netlify/functions/createGoogleFolder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ docs: [doc], test: false }),
+        body: JSON.stringify({ folderPath }),
       });
   
-      if (!copyResult.ok) {
+      if (!folderResponse.ok) {
+        throw new Error('Failed to create folder');
+      }
+  
+      const folderData = await folderResponse.json();
+      const folderId = folderData.folderId;
+  
+      // Step 2: Create a manual copy of the Google Doc
+      const copyResponse = await fetch('/.netlify/functions/copyGoogleDocument', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ doc, folderId, rationale }),
+      });
+  
+      if (!copyResponse.ok) {
         throw new Error('Failed to create manual copy');
       }
   
-      const copyData = await copyResult.json();
-      console.log('Copy result:', copyData);
+      const copyData = await copyResponse.json();
+      const newDocId = copyData.newDocId;
   
-      if (copyData.copied_docs && copyData.copied_docs.length > 0) {
-        const newDocId = copyData.copied_docs[0].new_copy_id;
+      console.log('New document ID:', newDocId);
   
-        // Step 2: Add headers and footers to the new copy
-        const currentDate = new Date();
-        const formattedDate = currentDate.toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'long',
-          year: 'numeric'
-        }).replace(/ /g, '-');
+      // Step 3: Add headers and footers to the new copy
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      }).replace(/ /g, '-');
   
-        const headersFootersResult = await fetch('/.netlify/functions/addHeadersAndFooters', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            documentId: newDocId,
-            formattedDate: formattedDate,
-            originalDocId: doc.google_id
-          }),
-        });
+      const headersFootersResult = await fetch('/.netlify/functions/addHeadersAndFooters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId: newDocId,
+          formattedDate: formattedDate,
+          originalDocId: doc.google_id
+        }),
+      });
   
-        if (!headersFootersResult.ok) {
-          throw new Error('Failed to add headers and footers');
-        }
-  
-        const headersFootersData = await headersFootersResult.json();
-        console.log('Headers and footers result:', headersFootersData);
-  
-        // You might want to update the UI or state here to reflect the changes
+      if (!headersFootersResult.ok) {
+        throw new Error('Failed to add headers and footers');
       }
+  
+      const headersFootersData = await headersFootersResult.json();
+      console.log('Headers and footers result:', headersFootersData);
+  
+      // Step 4: Commit the document to GitHub
+      const newDoc = {
+        ...doc,
+        google_id: newDocId,  
+        originalDocId: doc.google_id
+      };
+      
+      const commitResult = await fetch('/.netlify/functions/getDocBodyAndCommitToGitHub', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          docs: [newDoc],
+          recentChangesResponse: [newDocId],
+          test: false,
+          date: formattedDate
+        }),
+      });
+  
+      if (!commitResult.ok) {
+        throw new Error('Failed to commit document to GitHub');
+      }
+  
+      const commitData = await commitResult.json();
+      console.log('Commit result:', commitData);
+  
     } catch (error) {
       console.error('Error in handleButtonClick:', error);
       // Handle the error appropriately (e.g., show an error message to the user)
@@ -235,7 +276,7 @@ const DocManager: NextPage = () => {
               onAddDocument={handleAddDocument} 
               entities={uniqueEntities}
               getWorkgroupsForEntity={getWorkgroupsForEntity}
-              docTypes={uniqueDocTypes}  // Add this line
+              docTypes={uniqueDocTypes}  
             />
           ) : (
             <>
