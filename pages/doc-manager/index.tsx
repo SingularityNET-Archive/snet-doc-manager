@@ -22,6 +22,7 @@ const DocManager: NextPage = () => {
   const [selectedEntity, setSelectedEntity] = useState<string>("All");
   const [selectedWorkgroup, setSelectedWorkgroup] = useState<string>("All");
   const [showAddDocument, setShowAddDocument] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchDocuments() {
@@ -82,6 +83,7 @@ const DocManager: NextPage = () => {
 
   // Function to handle button click and log document values
   const handleButtonClick = async (doc: Document, rationale: string) => {
+    setUploading(true);
     try {
       // Step 1: Create the folder
       const folderPath = `manual-copies-of-documents/${doc.entity}/${doc.workgroup}/${doc.google_id}`;
@@ -171,9 +173,11 @@ const DocManager: NextPage = () => {
   
       const commitData = await commitResult.json();
       console.log('Commit result:', commitData);
-  
+      setUploading(false);
+      return Promise.resolve();
     } catch (error) {
       console.error('Error in handleButtonClick:', error);
+      return Promise.reject(error);
       // Handle the error appropriately (e.g., show an error message to the user)
     }
   };
@@ -188,6 +192,7 @@ const DocManager: NextPage = () => {
     google_id: string;
   }) => {
     console.log("New document:", newDoc);
+    setUploading(true);
     
     // Create the document object in the required structure
     const docForUpload = {
@@ -247,6 +252,8 @@ const DocManager: NextPage = () => {
     } catch (error) {
       console.error('Error adding new document:', error);
       // Here you might want to show an error message to the user
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -272,12 +279,20 @@ const DocManager: NextPage = () => {
             </button>
           </div>
           {showAddDocument ? (
+            <>
+            {uploading && (
+              <div className={styles.uploadingMessage}>
+                Uploading document... Please wait.
+              </div>
+            )}
             <AddDocument 
               onAddDocument={handleAddDocument} 
               entities={uniqueEntities}
               getWorkgroupsForEntity={getWorkgroupsForEntity}
-              docTypes={uniqueDocTypes}  
+              docTypes={uniqueDocTypes}
+              isUploading={uploading}
             />
+          </>
           ) : (
             <>
               <div className={styles.dropdown}>
@@ -312,7 +327,8 @@ const DocManager: NextPage = () => {
                   ))}
                 </select>
               </div>
-              <DocumentTable documents={filteredDocuments} onActionClick={handleButtonClick} />
+              {uploading && (<>Creating Copy... Please wait, do not close or refresh until it is done.</>)}
+              {!uploading && (<DocumentTable documents={filteredDocuments} onActionClick={handleButtonClick} />)}
             </>
           )}
         </>

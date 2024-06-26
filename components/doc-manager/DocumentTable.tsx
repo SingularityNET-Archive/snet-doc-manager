@@ -1,4 +1,3 @@
-// components/doc-manager/DocumentTable.tsx
 import React, { useState } from 'react';
 import styles from '../../styles/docManager.module.css';
 
@@ -14,14 +13,24 @@ interface Document {
 
 interface DocumentTableProps {
   documents: Document[];
-  onActionClick: (doc: Document, rationale: string) => void;
+  onActionClick: (doc: Document, rationale: string) => Promise<void>;
 }
 
 const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick }) => {
   const [rationales, setRationales] = useState<{ [key: string]: string }>({});
+  const [loadingDocuments, setLoadingDocuments] = useState<{ [key: string]: boolean }>({});
 
   const handleRationaleChange = (docId: string, value: string) => {
     setRationales(prev => ({ ...prev, [docId]: value }));
+  };
+
+  const handleArchiveClick = async (doc: Document) => {
+    setLoadingDocuments(prev => ({ ...prev, [doc.google_id]: true }));
+    try {
+      await onActionClick(doc, rationales[doc.google_id] || '');
+    } finally {
+      setLoadingDocuments(prev => ({ ...prev, [doc.google_id]: false }));
+    }
   };
 
   return (
@@ -66,11 +75,15 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick 
                 value={rationales[doc.google_id] || ''}
                 onChange={(e) => handleRationaleChange(doc.google_id, e.target.value)}
                 placeholder="Enter rationale"
+                disabled={loadingDocuments[doc.google_id]}
               />
             </td>
             <td>
-              <button onClick={() => onActionClick(doc, rationales[doc.google_id] || '')}>
-                Create Archive Copy
+              <button 
+                onClick={() => handleArchiveClick(doc)}
+                disabled={loadingDocuments[doc.google_id]}
+              >
+                {loadingDocuments[doc.google_id] ? 'Creating Archive...' : 'Create Archive Copy'}
               </button>
             </td>
           </tr>

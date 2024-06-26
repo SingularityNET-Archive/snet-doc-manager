@@ -1,4 +1,3 @@
-// ../netlify/functions/addHeadersAndFooters.js
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../../utils/oauth2Client';
 
@@ -17,72 +16,92 @@ export const handler = async (event, context) => {
   const docs = google.docs({ version: 'v1', auth: oauth2Client });
 
   try {
-    // Add header and footer
-    await docs.documents.batchUpdate({
-      documentId: documentId,
-      requestBody: {
-        requests: [
-          {
-            createHeader: {
-              type: 'DEFAULT',
-            }
-          },
-          {
-            createFooter: {
-              type: 'DEFAULT',
-            }
-          }
-        ]
-      }
-    });
-
-    // Get the document to find the header and footer IDs
+    // Get the document to check for existing headers and footers
     const document = await docs.documents.get({ documentId: documentId });
     
-    // Find the first header and footer
-    const headerId = Object.values(document.data.headers || {})[0]?.headerId;
-    const footerId = Object.values(document.data.footers || {})[0]?.footerId;
+    let existingHeaders = document.data.headers || {};
+    let existingFooters = document.data.footers || {};
+
+    const requests = [];
+
+    // Check if header exists, if not, create one
+    if (Object.keys(existingHeaders).length === 0) {
+      requests.push({
+        createHeader: {
+          type: 'DEFAULT',
+        }
+      });
+    }
+
+    // Check if footer exists, if not, create one
+    if (Object.keys(existingFooters).length === 0) {
+      requests.push({
+        createFooter: {
+          type: 'DEFAULT',
+        }
+      });
+    }
+
+    // If we need to create headers or footers, do it now
+    if (requests.length > 0) {
+      await docs.documents.batchUpdate({
+        documentId: documentId,
+        requestBody: { requests }
+      });
+
+      // Refresh the document data after creating headers/footers
+      const updatedDocument = await docs.documents.get({ documentId: documentId });
+      existingHeaders = updatedDocument.data.headers || {};
+      existingFooters = updatedDocument.data.footers || {};
+    }
+
+    // Get the first header and footer IDs
+    const headerId = Object.values(existingHeaders)[0]?.headerId;
+    const footerId = Object.values(existingFooters)[0]?.footerId;
 
     if (!headerId || !footerId) {
       throw new Error('Failed to find header or footer ID');
     }
 
-    // Insert text into header and footer
+    // Prepare requests to update header and footer content
+    const updateRequests = [
+      {
+        insertText: {
+          location: {
+            segmentId: headerId,
+            index: 0
+          },
+          text: `Archive Copy created on ${formattedDate}\n`
+        }
+      },
+      {
+        insertText: {
+          location: {
+            segmentId: footerId,
+            index: 0
+          },
+          text: `Original Document ID: ${originalDocId}\n`
+        }
+      }
+    ];
+
+    // Update header and footer content
     await docs.documents.batchUpdate({
       documentId: documentId,
       requestBody: {
-        requests: [
-          {
-            insertText: {
-              location: {
-                segmentId: headerId,
-                index: 0
-              },
-              text: `Archive Copy created on ${formattedDate}\n`
-            }
-          },
-          {
-            insertText: {
-              location: {
-                segmentId: footerId,
-                index: 0
-              },
-              text: `Original Document ID: ${originalDocId}\n`
-            }
-          }
-        ]
+        requests: updateRequests
       }
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Headers and footers added successfully' }),
+      body: JSON.stringify({ message: 'Headers and footers updated successfully' }),
     };
   } catch (error) {
-    console.error('Error adding headers and footers:', error);
+    console.error('Error updating headers and footers:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to add headers and footers', details: error.message }),
+      body: JSON.stringify({ error: 'Failed to update headers and footers', details: error.message }),
     };
   }
 };

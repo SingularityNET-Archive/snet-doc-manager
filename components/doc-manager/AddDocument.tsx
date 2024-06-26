@@ -17,9 +17,16 @@ interface AddDocumentProps {
   entities: string[];
   getWorkgroupsForEntity: (entity: string) => string[];
   docTypes: string[];  
+  isUploading: boolean;
 }
 
-const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getWorkgroupsForEntity, docTypes }) => {
+const AddDocument: React.FC<AddDocumentProps> = ({ 
+  onAddDocument, 
+  entities, 
+  getWorkgroupsForEntity, 
+  docTypes, 
+  isUploading  // New prop
+}) => {
   const [newDoc, setNewDoc] = useState({
     url: "",
     title: "",
@@ -90,6 +97,7 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
   };
 
   const handleAddDocument = () => {
+    if (isUploading) return;
     const googleId = extractGoogleId(newDoc.url);
     const formattedDoc = {
       all_copy_ids: [googleId],
@@ -119,6 +127,11 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
 
   return (
     <div className={styles.addDocument}>
+      {isUploading && (
+        <div className={styles.uploadingMessage}>
+          Please do not leave this window or refresh until it is done.
+        </div>
+      )}
       <input
         type="text"
         name="url"
@@ -126,6 +139,7 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
         value={newDoc.url}
         autoComplete='off'
         onChange={handleInputChange}
+        disabled={isUploading}
       />
       <input
         type="text"
@@ -134,8 +148,14 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
         value={newDoc.title}
         autoComplete='off'
         onChange={handleInputChange}
+        disabled={isUploading}
       />
-      <select name="doc_type" onChange={handleDocTypeChange} value={isNewDocType ? 'new' : newDoc.doc_type}>
+      <select 
+        name="doc_type" 
+        onChange={handleDocTypeChange} 
+        value={isNewDocType ? 'new' : newDoc.doc_type}
+        disabled={isUploading}
+      >
         <option value="">Select document type</option>
         {docTypes.filter(type => !hardcodedDocTypes.includes(type)).map(type => (
           <option key={type} value={type}>{type}</option>
@@ -152,9 +172,15 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
           placeholder="Enter new document type"
           value={newDoc.doc_type}
           onChange={handleInputChange}
+          disabled={isUploading}
         />
       )}
-      <select name="entity" onChange={handleEntityChange} value={isNewEntity ? 'new' : newDoc.entity}>
+      <select 
+        name="entity" 
+        onChange={handleEntityChange} 
+        value={isNewEntity ? 'new' : newDoc.entity}
+        disabled={isUploading}
+      >
         <option value="">Select an entity</option>
         {entities.map(entity => (
           <option key={entity} value={entity}>{entity}</option>
@@ -168,13 +194,14 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
           placeholder="Enter new entity"
           value={newDoc.entity}
           onChange={handleInputChange}
+          disabled={isUploading}
         />
       )}
       <select 
         name="workgroup" 
         onChange={handleWorkgroupChange} 
         value={isNewWorkgroup ? 'new' : newDoc.workgroup}
-        disabled={!newDoc.entity || isNewEntity}
+        disabled={!newDoc.entity || isNewEntity || isUploading}
       >
         <option value="">Select a workgroup</option>
         {workgroups.map(workgroup => (
@@ -189,9 +216,12 @@ const AddDocument: React.FC<AddDocumentProps> = ({ onAddDocument, entities, getW
           placeholder="Enter new workgroup"
           value={newDoc.workgroup}
           onChange={handleInputChange}
+          disabled={isUploading}
         />
       )}
-      <button onClick={handleAddDocument}>Add Document</button>
+      <button onClick={handleAddDocument} disabled={isUploading}>
+        {isUploading ? 'Uploading...' : 'Add Document'}
+      </button>
     </div>
   );
 };
