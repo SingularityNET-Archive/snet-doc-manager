@@ -2,6 +2,7 @@
 import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const fetchGoogleDocTitle = async (googleDocId) => {
   const oauth2Client = getOAuth2Client();
@@ -16,12 +17,15 @@ const fetchGoogleDocTitle = async (googleDocId) => {
   } catch (error) {
     if (error.code === 403) {
       console.error('Insufficient permissions to access the Google Doc:', error);
+      await sendErrorMessageToDiscord(`Insufficient permissions for document: ${googleDocId}`);
       return 'Access Denied';
     } else if (error.code === 404) {
       console.error('Google Doc not found:', error);
+      await sendErrorMessageToDiscord(`Google Doc not found: ${googleDocId}`);
       return 'File Not Found';
     } else {
       console.error('Failed to retrieve Google Doc title:', error);
+      await sendErrorMessageToDiscord(`Failed to retrieve Google Doc title for document: ${googleDocId}`);
       return 'Name Unavailable';
     }
   }
