@@ -93,3 +93,9 @@
   .addDocument button:hover {
     background-color: #1a2040;
   }
+
+  .uploadingMessage {
+    color: #ffffff;
+    margin-top: 1em;
+    text-align: center;
+}
