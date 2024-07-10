@@ -5,6 +5,7 @@ import styles from '../../styles/docManager.module.css';
 import DocumentTable from '../../components/doc-manager/DocumentTable';
 import AddDocument from '../../components/doc-manager/AddDocument';
 import { processNewDocument } from '../../utils/processNewDocument';
+import LoadingBar from '../../components/LoadingBar';
 
 interface Document {
   google_id: string;
@@ -23,6 +24,8 @@ const DocManager: NextPage = () => {
   const [selectedWorkgroup, setSelectedWorkgroup] = useState<string>("All");
   const [showAddDocument, setShowAddDocument] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [addDocumentProgress, setAddDocumentProgress] = useState<number>(0);
 
   useEffect(() => {
     async function fetchDocuments() {
@@ -82,10 +85,12 @@ const DocManager: NextPage = () => {
         .filter(doc => selectedWorkgroup === "All" || doc.workgroup === selectedWorkgroup);
 
   // Function to handle button click and log document values
-  const handleButtonClick = async (doc: Document, rationale: string) => {
+  const handleButtonClick = async (doc: Document, rationale: string, docOwner: string) => {
     setUploading(true);
+    setProgress(0);
     try {
       // Step 1: Create the folder
+      setProgress(10);
       const folderPath = `manual-copies-of-documents/${doc.entity}/${doc.workgroup}/${doc.google_id}`;
       const folderResponse = await fetch('/.netlify/functions/createGoogleFolder', {
         method: 'POST',
@@ -103,6 +108,7 @@ const DocManager: NextPage = () => {
       const folderId = folderData.folderId;
   
       // Step 2: Create a manual copy of the Google Doc
+      setProgress(30);
       const copyResponse = await fetch('/.netlify/functions/copyGoogleDocument', {
         method: 'POST',
         headers: {
@@ -121,13 +127,14 @@ const DocManager: NextPage = () => {
       console.log('New document ID:', newDocId);
   
       // Step 3: Add headers and footers to the new copy
+      setProgress(60);
       const currentDate = new Date();
       const formattedDate = currentDate.toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'long',
         year: 'numeric'
       }).replace(/ /g, '-');
-  
+      console.log(docOwner,doc.workgroup,formattedDate)
       const headersFootersResult = await fetch('/.netlify/functions/addHeadersAndFooters', {
         method: 'POST',
         headers: {
@@ -136,7 +143,9 @@ const DocManager: NextPage = () => {
         body: JSON.stringify({
           documentId: newDocId,
           formattedDate: formattedDate,
-          originalDocId: doc.google_id
+          originalDocId: doc.google_id,
+          ownerUsername: docOwner,
+          workgroup: doc.workgroup
         }),
       });
   
@@ -148,6 +157,7 @@ const DocManager: NextPage = () => {
       console.log('Headers and footers result:', headersFootersData);
   
       // Step 4: Commit the document to GitHub
+      setProgress(80);
       const newDoc = {
         ...doc,
         google_id: newDocId,  
@@ -173,6 +183,7 @@ const DocManager: NextPage = () => {
   
       const commitData = await commitResult.json();
       console.log('Commit result:', commitData);
+      setProgress(100);
       setUploading(false);
       return Promise.resolve();
     } catch (error) {
@@ -193,6 +204,7 @@ const DocManager: NextPage = () => {
   }) => {
     console.log("New document:", newDoc);
     setUploading(true);
+    setAddDocumentProgress(0);
     
     // Create the document object in the required structure
     const docForUpload = {
@@ -209,6 +221,7 @@ const DocManager: NextPage = () => {
 
     try {
       // Upload the new document to the database
+      setAddDocumentProgress(30);
       const response = await fetch('/.netlify/functions/uploadDocs', {
         method: 'POST',
         headers: {
@@ -221,6 +234,7 @@ const DocManager: NextPage = () => {
         throw new Error('Failed to upload document');
       }
 
+      setAddDocumentProgress(60);
       const result = await response.json();
       console.log('Upload result:', result);
 
@@ -240,11 +254,13 @@ const DocManager: NextPage = () => {
 
         setDocuments(prevDocs => [...prevDocs, fullNewDoc]);
 
+        setAddDocumentProgress(80);
         if (fullNewDoc.doc_type == 'googleDocs') {
           // Process the new document
           await processNewDocument(fullNewDoc);
         }
 
+        setAddDocumentProgress(100);
         //setShowAddDocument(false); // Switch back to document table view after adding
       } else {
         console.warn('Document was not inserted. It may already exist in the database.');
@@ -254,6 +270,7 @@ const DocManager: NextPage = () => {
       // Here you might want to show an error message to the user
     } finally {
       setUploading(false);
+      setAddDocumentProgress(0);
     }
   };
 
@@ -283,6 +300,7 @@ const DocManager: NextPage = () => {
             {uploading && (
               <div className={styles.uploadingMessage}>
                 Uploading document... Please wait.
+                <LoadingBar progress={addDocumentProgress} />
               </div>
             )}
             <AddDocument 
@@ -327,8 +345,20 @@ const DocManager: NextPage = () => {
                   ))}
                 </select>
               </div>
-              {uploading && (<>Creating Copy... Please wait, do not close or refresh until it is done.</>)}
-              {!uploading && (<DocumentTable documents={filteredDocuments} onActionClick={handleButtonClick} />)}
+              {uploading && (
+                <>
+                  <div className={styles.uploadingMessage}>
+                    Creating Copy... Please wait, do not close or refresh until it is done.
+                    <LoadingBar progress={progress} />
+                  </div>
+                </>
+              )}
+              {!uploading && (
+                <DocumentTable 
+                  documents={filteredDocuments} 
+                  onActionClick={handleButtonClick} 
+                />
+              )}
             </>
           )}
         </>

@@ -4,9 +4,9 @@ import { getOAuth2Client } from '../../utils/oauth2Client';
 const oauth2Client = getOAuth2Client();
 
 export const handler = async (event, context) => {
-  const { documentId, formattedDate, originalDocId } = JSON.parse(event.body);
+  const { documentId, formattedDate, originalDocId, ownerUsername, workgroup } = JSON.parse(event.body);
 
-  if (!documentId || !formattedDate || !originalDocId) {
+  if (!documentId || !formattedDate || !originalDocId || !ownerUsername || !workgroup) {
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'Missing required parameters' }),
@@ -14,8 +14,18 @@ export const handler = async (event, context) => {
   }
 
   const docs = google.docs({ version: 'v1', auth: oauth2Client });
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
   try {
+    // Get the original document metadata
+    const originalDocMetadata = await drive.files.get({
+      fileId: originalDocId,
+      fields: 'createdTime,owners'
+    });
+
+    const createdTime = new Date(originalDocMetadata.data.createdTime).toLocaleString();
+    const creatorUsername = originalDocMetadata.data.owners[0].displayName;
+
     // Get the document to check for existing headers and footers
     const document = await docs.documents.get({ documentId: documentId });
     
@@ -71,7 +81,8 @@ export const handler = async (event, context) => {
             segmentId: headerId,
             index: 0
           },
-          text: `Archive Copy created on ${formattedDate}\n`
+          text: `Created for ${workgroup}, by ${creatorUsername}, on ${createdTime}
+Doc owned by - ${ownerUsername}\n`
         }
       },
       {

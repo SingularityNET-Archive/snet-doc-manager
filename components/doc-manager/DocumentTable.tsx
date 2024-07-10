@@ -13,21 +13,26 @@ interface Document {
 
 interface DocumentTableProps {
   documents: Document[];
-  onActionClick: (doc: Document, rationale: string) => Promise<void>;
+  onActionClick: (doc: Document, rationale: string, docOwner: string) => Promise<void>;
 }
 
 const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick }) => {
   const [rationales, setRationales] = useState<{ [key: string]: string }>({});
+  const [docOwners, setDocOwners] = useState<{ [key: string]: string }>({});
   const [loadingDocuments, setLoadingDocuments] = useState<{ [key: string]: boolean }>({});
 
   const handleRationaleChange = (docId: string, value: string) => {
     setRationales(prev => ({ ...prev, [docId]: value }));
   };
 
+  const handleDocOwnerChange = (docId: string, value: string) => {
+    setDocOwners(prev => ({ ...prev, [docId]: value }));
+  };
+
   const handleArchiveClick = async (doc: Document) => {
     setLoadingDocuments(prev => ({ ...prev, [doc.google_id]: true }));
     try {
-      await onActionClick(doc, rationales[doc.google_id] || '');
+      await onActionClick(doc, rationales[doc.google_id] || '', docOwners[doc.google_id] || '');
     } finally {
       setLoadingDocuments(prev => ({ ...prev, [doc.google_id]: false }));
     }
@@ -44,6 +49,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick 
           <th>Link</th>
           <th>Archives</th>
           <th>Rationale</th>
+          <th>Doc Owner</th>
           <th>Archive</th>
         </tr>
       </thead>
@@ -79,9 +85,18 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onActionClick 
               />
             </td>
             <td>
+              <input
+                type="text"
+                value={docOwners[doc.google_id] || ''}
+                onChange={(e) => handleDocOwnerChange(doc.google_id, e.target.value)}
+                placeholder="Enter doc owner"
+                disabled={loadingDocuments[doc.google_id]}
+              />
+            </td>
+            <td>
               <button 
                 onClick={() => handleArchiveClick(doc)}
-                disabled={loadingDocuments[doc.google_id]}
+                disabled={loadingDocuments[doc.google_id] || !rationales[doc.google_id] || !docOwners[doc.google_id]}
               >
                 {loadingDocuments[doc.google_id] ? 'Creating Archive...' : 'Create Archive Copy'}
               </button>
