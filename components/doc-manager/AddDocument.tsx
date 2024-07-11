@@ -11,6 +11,9 @@ interface AddDocumentProps {
     doc_type: string;
     google_id: string;
     doc_owner: string;
+    metadata: {
+      doc_owner: string;
+    };
   }) => Promise<void>;
   entities: string[];
   getWorkgroupsForEntity: (entity: string) => string[];
@@ -105,7 +108,10 @@ const AddDocument: React.FC<AddDocumentProps> = ({
       workgroup: newDoc.workgroup,
       doc_type: newDoc.doc_type,
       google_id: googleId,
-      doc_owner: newDoc.doc_owner
+      doc_owner: newDoc.doc_owner,
+      metadata: {
+        doc_owner: newDoc.doc_owner
+      }
     };
   
     onAddDocument(formattedDoc);

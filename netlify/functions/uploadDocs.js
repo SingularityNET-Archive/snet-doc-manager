@@ -20,10 +20,10 @@ export const handler = async (event, context) => {
           latest_copy_g_id: null,
           doc_type: docType,
           title: docInfo.workingDoc.title,
-          metadata: JSON.stringify({
-            doc_owner: docInfo.doc_owner || '',
+          metadata: {
+            doc_owner: docInfo.metadata.doc_owner || '',
             // You can add other metadata fields here in the future
-          }),
+          },
         };
       })
     );
@@ -58,7 +58,8 @@ export const handler = async (event, context) => {
 
     // Insert the new documents data into the documents table
     for (const doc of newDocumentsData) {
-
+      console.log('Inserting document:', doc);
+      
       const { data: insertedDoc, error: insertError } = await supabaseAdmin
         .from('documents')
         .insert(doc);
