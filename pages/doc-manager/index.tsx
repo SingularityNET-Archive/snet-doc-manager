@@ -15,6 +15,9 @@ interface Document {
   sharing_status: string;
   url: string;
   doc_type: string;
+  metadata: Record<string, any> | null;  // Allow null
+  all_copy_ids: string[];
+  latest_copy_g_id: string | null;
 }
 
 const DocManager: NextPage = () => {
@@ -158,10 +161,15 @@ const DocManager: NextPage = () => {
   
       // Step 4: Commit the document to GitHub
       setProgress(80);
+      const newMetadata = {
+        ...(doc.metadata || {}),
+        doc_owner: docOwner
+      };
       const newDoc = {
         ...doc,
         google_id: newDocId,  
-        originalDocId: doc.google_id
+        originalDocId: doc.google_id,
+        metadata: newMetadata
       };
       
       const commitResult = await fetch('/.netlify/functions/getDocBodyAndCommitToGitHub', {
@@ -183,13 +191,37 @@ const DocManager: NextPage = () => {
   
       const commitData = await commitResult.json();
       console.log('Commit result:', commitData);
+  
+      // Step 5: Update the document metadata in the database
+      const updateMetadataResult = await fetch('/.netlify/functions/updateDocumentMetadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          google_id: doc.google_id,  // Use the original Google Doc ID
+          metadata: newMetadata  // Send the object directly, not as a string
+        }),
+      });
+  
+      if (!updateMetadataResult.ok) {
+        throw new Error('Failed to update document metadata');
+      }
+
+      // Update the local state with the new metadata
+      setDocuments(prevDocs => prevDocs.map(d => 
+        d.google_id === doc.google_id 
+          ? { ...d, metadata: newMetadata } 
+          : d
+      ));
+  
       setProgress(100);
       setUploading(false);
       return Promise.resolve();
     } catch (error) {
       console.error('Error in handleButtonClick:', error);
+      setUploading(false);
       return Promise.reject(error);
-      // Handle the error appropriately (e.g., show an error message to the user)
     }
   };
 
@@ -201,6 +233,7 @@ const DocManager: NextPage = () => {
     workgroup: string;
     doc_type: string;
     google_id: string;
+    doc_owner: string;
   }) => {
     console.log("New document:", newDoc);
     setUploading(true);
@@ -215,10 +248,14 @@ const DocManager: NextPage = () => {
         workingDoc: {
           link: newDoc.url,
           title: newDoc.title
-        }
+        },
+        metadata: JSON.stringify({
+          doc_owner: newDoc.doc_owner,
+          // You can add other metadata fields here in the future
+        })
       }]
     };
-
+  
     try {
       // Upload the new document to the database
       setAddDocumentProgress(30);
@@ -229,18 +266,18 @@ const DocManager: NextPage = () => {
         },
         body: JSON.stringify(docForUpload),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to upload document');
       }
-
+  
       setAddDocumentProgress(60);
       const result = await response.json();
       console.log('Upload result:', result);
-
+  
       // If the upload was successful, add the new document to the local state
       if (result.inserted > 0) {
-        const fullNewDoc = {
+        const fullNewDoc: Document = {
           google_id: newDoc.google_id,
           url: newDoc.url,
           title: newDoc.title,
@@ -250,18 +287,21 @@ const DocManager: NextPage = () => {
           sharing_status: 'pending',
           all_copy_ids: [],
           latest_copy_g_id: null,
-        };
-
+          metadata: {
+            doc_owner: newDoc.doc_owner,
+            // You can add other metadata fields here in the future
+          }
+        };  
+  
         setDocuments(prevDocs => [...prevDocs, fullNewDoc]);
-
+  
         setAddDocumentProgress(80);
         if (fullNewDoc.doc_type == 'googleDocs') {
           // Process the new document
           await processNewDocument(fullNewDoc);
         }
-
+  
         setAddDocumentProgress(100);
-        //setShowAddDocument(false); // Switch back to document table view after adding
       } else {
         console.warn('Document was not inserted. It may already exist in the database.');
       }
