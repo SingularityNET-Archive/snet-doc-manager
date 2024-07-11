@@ -234,6 +234,9 @@ const DocManager: NextPage = () => {
     doc_type: string;
     google_id: string;
     doc_owner: string;
+    metadata: {
+      doc_owner: string;
+    };
   }) => {
     console.log("New document:", newDoc);
     setUploading(true);
@@ -249,10 +252,7 @@ const DocManager: NextPage = () => {
           link: newDoc.url,
           title: newDoc.title
         },
-        metadata: JSON.stringify({
-          doc_owner: newDoc.doc_owner,
-          // You can add other metadata fields here in the future
-        })
+        metadata: newDoc.metadata
       }]
     };
   
