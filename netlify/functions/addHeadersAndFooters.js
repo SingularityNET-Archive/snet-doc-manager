@@ -3,6 +3,34 @@ import { getOAuth2Client } from '../../utils/oauth2Client';
 
 const oauth2Client = getOAuth2Client();
 
+// Helper function to get the day suffix (th, st, nd, rd)
+function getDaySuffix(day) {
+  if (day >= 11 && day <= 13) {
+    return 'th';
+  }
+  switch (day % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+}
+
+// Helper function to format the date
+function formatDate(date) {
+  const day = date.getDate();
+  const month = date.toLocaleString('default', { month: 'long' });
+  const year = date.getFullYear();
+
+  const suffix = getDaySuffix(day);
+
+  return `${day}${suffix} ${month} ${year}`;
+}
+
 export const handler = async (event, context) => {
   const { documentId, formattedDate, originalDocId, ownerUsername, workgroup } = JSON.parse(event.body);
 
@@ -23,8 +51,10 @@ export const handler = async (event, context) => {
       fields: 'createdTime,owners'
     });
 
-    const createdTime = new Date(originalDocMetadata.data.createdTime).toLocaleString();
+    const createdDate = new Date(originalDocMetadata.data.createdTime);
+    const createdTime = formatDate(createdDate);
     const creatorUsername = originalDocMetadata.data.owners[0].displayName;
+
 
     // Get the document to check for existing headers and footers
     const document = await docs.documents.get({ documentId: documentId });
@@ -81,8 +111,8 @@ export const handler = async (event, context) => {
             segmentId: headerId,
             index: 0
           },
-          text: `Created for ${workgroup}, by ${creatorUsername}, on ${createdTime}
-Doc owned by - ${ownerUsername}\n`
+          text: `Created by ${creatorUsername} for ${workgroup}, ${createdTime}
+Currently owned by - ${ownerUsername}\n`
         }
       },
       {

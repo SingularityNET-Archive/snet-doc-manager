@@ -20,6 +20,10 @@ export const handler = async (event, context) => {
           latest_copy_g_id: null,
           doc_type: docType,
           title: docInfo.workingDoc.title,
+          metadata: JSON.stringify({
+            doc_owner: docInfo.doc_owner || '',
+            // You can add other metadata fields here in the future
+          }),
         };
       })
     );

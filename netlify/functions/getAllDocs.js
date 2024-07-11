@@ -5,7 +5,7 @@ export const handler = async (event, context) => {
   try {
     const { data: docs, error } = await supabaseAdmin
       .from('documents')
-      .select('google_id, sharing_status, all_copy_ids, latest_copy_g_id, doc_type, workgroup, entity, title, url')
+      .select('google_id, sharing_status, all_copy_ids, latest_copy_g_id, doc_type, workgroup, entity, title, url, metadata')
       .eq('doc_type', 'googleDocs');
 
     if (error) {

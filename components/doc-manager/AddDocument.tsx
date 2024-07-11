@@ -4,16 +4,14 @@ import styles from '../../styles/docManager.module.css';
 
 interface AddDocumentProps {
   onAddDocument: (document: {
-    all_copy_ids: string[];
-    doc_type: string;
-    entity: string;
-    google_id: string;
-    latest_copy_g_id: string;
-    sharing_status: string;
-    title: string;
     url: string;
+    title: string;
+    entity: string;
     workgroup: string;
-  }) => void;
+    doc_type: string;
+    google_id: string;
+    doc_owner: string;
+  }) => Promise<void>;
   entities: string[];
   getWorkgroupsForEntity: (entity: string) => string[];
   docTypes: string[];  
@@ -25,14 +23,15 @@ const AddDocument: React.FC<AddDocumentProps> = ({
   entities, 
   getWorkgroupsForEntity, 
   docTypes, 
-  isUploading  // New prop
+  isUploading
 }) => {
   const [newDoc, setNewDoc] = useState({
     url: "",
     title: "",
     entity: "",
     workgroup: "",
-    doc_type: ""
+    doc_type: "",
+    doc_owner: ""  // Add this line for doc owner
   });
 
   const [isNewEntity, setIsNewEntity] = useState(false);
@@ -100,25 +99,24 @@ const AddDocument: React.FC<AddDocumentProps> = ({
     if (isUploading) return;
     const googleId = extractGoogleId(newDoc.url);
     const formattedDoc = {
-      all_copy_ids: [googleId],
-      doc_type: newDoc.doc_type,
-      entity: newDoc.entity,
-      google_id: googleId,
-      latest_copy_g_id: googleId,
-      sharing_status: "pending",
-      title: newDoc.title,
       url: newDoc.url,
-      workgroup: newDoc.workgroup
+      title: newDoc.title,
+      entity: newDoc.entity,
+      workgroup: newDoc.workgroup,
+      doc_type: newDoc.doc_type,
+      google_id: googleId,
+      doc_owner: newDoc.doc_owner
     };
-
+  
     onAddDocument(formattedDoc);
-
+  
     setNewDoc({
       url: "",
       title: "",
       entity: "",
       workgroup: "",
-      doc_type: ""
+      doc_type: "",
+      doc_owner: ""
     });
     setIsNewEntity(false);
     setIsNewWorkgroup(false);
@@ -146,6 +144,16 @@ const AddDocument: React.FC<AddDocumentProps> = ({
         name="title"
         placeholder="Enter document title"
         value={newDoc.title}
+        autoComplete='off'
+        onChange={handleInputChange}
+        disabled={isUploading}
+      />
+      {/* Add new input for doc_owner */}
+      <input
+        type="text"
+        name="doc_owner"
+        placeholder="Enter document owner"
+        value={newDoc.doc_owner}
         autoComplete='off'
         onChange={handleInputChange}
         disabled={isUploading}
@@ -219,7 +227,7 @@ const AddDocument: React.FC<AddDocumentProps> = ({
           disabled={isUploading}
         />
       )}
-      <button onClick={handleAddDocument} disabled={isUploading}>
+      <button onClick={handleAddDocument} disabled={isUploading || !newDoc.doc_owner}>
         {isUploading ? 'Uploading...' : 'Add Document'}
       </button>
     </div>
