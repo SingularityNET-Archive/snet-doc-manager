@@ -1,13 +1,13 @@
-// utils/getDocumentComments.js
+// utils/testDocument.js
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../utils/oauth2Client';
 import { sendErrorMessageToDiscord } from '../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
-export async function getDocumentComments(doc) {
+export async function testDocument(doc) {
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
-  
+
     try {
       const commentsResponse = await drive.comments.list({
         fileId: doc.google_id,

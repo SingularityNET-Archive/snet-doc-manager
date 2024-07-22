@@ -5,6 +5,7 @@ import ProcessDocsButton from '../../components/ProcessDocsButton';
 import GetNewDocs from '../../components/GetNewDocs';
 import TestDocument from '../../components/TestDocument';
 import ProcessUpdates from "../../components/ProcessUpdates";
+import TestFeature from "../../components/TestFeature";
 
 const DevTools: NextPage = () => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -22,6 +23,8 @@ const DevTools: NextPage = () => {
               <TestDocument />
               <br />
               <ProcessUpdates />
+              <br />
+              <TestFeature />
             </div>
           </div>
         )}
