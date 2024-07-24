@@ -112,16 +112,8 @@ export const handler = async (event, context) => {
             index: 0
           },
           text: `Created by ${creatorUsername} for ${workgroup}, ${createdTime}
-Currently owned by - ${ownerUsername}\n`
-        }
-      },
-      {
-        insertText: {
-          location: {
-            segmentId: footerId,
-            index: 0
-          },
-          text: `Original Document ID: ${originalDocId}\n`
+Currently owned by - ${ownerUsername} 
+Original Document ID: ${originalDocId}\n`
         }
       }
     ];

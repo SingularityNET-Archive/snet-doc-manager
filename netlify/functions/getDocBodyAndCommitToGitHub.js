@@ -8,7 +8,7 @@ async function commitDocumentTextToGitHub(docs, date = null) {
     const documentText = await getDocumentText(doc);
     let path;
     if (date) {
-      path = `Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs/${doc.originalDocId}/Archive-copies/${date}-${doc.google_id}.md`;
+      path = `Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs/${doc.originalDocId}/Archive-copies/${date}/${doc.google_id}/doc-text-only.md`;
     } else {
       path = `Data/${doc.entity}/Content/${doc.workgroup}/Docs/GoogleDocs/${doc.google_id}/doc-text-only.md`;
     }

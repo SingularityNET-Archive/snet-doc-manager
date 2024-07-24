@@ -5,15 +5,17 @@ import { sendErrorMessageToDiscord } from '../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
-export async function getDocumentTextAndComments(doc) {
+export async function getDocumentTextAndComments(doc, date = null) {
     const docs = google.docs({ version: 'v1', auth: oauth2Client });
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    const fileId = date ? doc.originalDocId : doc.google_id;
+    console.log('File ID:', fileId, date);
   
     try {
       const [response, commentsResponse] = await Promise.all([
-        docs.documents.get({ documentId: doc.google_id }),
+        docs.documents.get({ documentId: fileId }),
         drive.comments.list({
-          fileId: doc.google_id,
+          fileId: fileId,
           fields: 'comments(id,author,content,quotedFileContent,anchor,replies(author,content))',
         }),
       ]);

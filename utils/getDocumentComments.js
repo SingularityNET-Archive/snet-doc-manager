@@ -1,22 +1,23 @@
-// utils/getDocumentComments.js
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../utils/oauth2Client';
 import { sendErrorMessageToDiscord } from '../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
 
-export async function getDocumentComments(doc) {
+export async function getDocumentComments(doc, date = null) {
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
-  
+    const fileId = date ? doc.originalDocId : doc.google_id;
+    console.log('File ID:', fileId, date);
+
     try {
       const commentsResponse = await drive.comments.list({
-        fileId: doc.google_id,
+        fileId: fileId,
         fields: 'comments(id,author,content,quotedFileContent,anchor,replies(author,content))',
       });
   
       const commentsData = commentsResponse.data.comments;
   
-      console.log('Document ID:', doc.google_id);
+      console.log('Document ID:', fileId);
       console.log('Comments Data:', commentsData);
   
       let commentsText = '';
@@ -49,12 +50,12 @@ export async function getDocumentComments(doc) {
       return commentsText;
     } catch (error) {
       if (error.code === 403) {
-        console.warn('Access denied for document:', doc.google_id);
-        await sendErrorMessageToDiscord(`Access denied for document: ${doc.google_id}`);
+        console.warn('Access denied for document:', fileId);
+        await sendErrorMessageToDiscord(`Access denied for document: ${fileId}`);
         return true;
       } else if (error.code === 404) {
-        console.warn('File not found:', doc.google_id);
-        await sendErrorMessageToDiscord(`File not found: ${doc.google_id}`);
+        console.warn('File not found:', fileId);
+        await sendErrorMessageToDiscord(`File not found: ${fileId}`);
         return true;
       } else if (error.code === 401 && error.message.includes('invalid_grant')) {
         console.error('Refresh token expired. Please obtain a new refresh token.');
@@ -62,7 +63,7 @@ export async function getDocumentComments(doc) {
         throw error;
       } else {
         console.error('Failed to retrieve document comments:', error);
-        await sendErrorMessageToDiscord(`Failed to retrieve document comments ${doc.google_id}: ${error.message}`);
+        await sendErrorMessageToDiscord(`Failed to retrieve document comments ${fileId}: ${error.message}`);
         throw error;
       }
     }
