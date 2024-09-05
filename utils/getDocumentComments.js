@@ -1,11 +1,13 @@
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../utils/oauth2Client';
+import { getGoogleAuth } from '../../utils/googleAuth';
 import { sendErrorMessageToDiscord } from '../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
+const auth = getGoogleAuth();
 
 export async function getDocumentComments(doc, date = null) {
-    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    const drive = google.drive({ version: 'v3', auth: auth });
     const fileId = date ? doc.originalDocId : doc.google_id;
     console.log('File ID:', fileId, date);
 

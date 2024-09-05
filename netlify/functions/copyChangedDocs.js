@@ -2,12 +2,14 @@
 import { google } from 'googleapis';
 import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { getGoogleAuth } from '../../utils/googleAuth';
 import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
+const auth = getGoogleAuth();
 
 async function getFolderId(folderPath) {
-  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const drive = google.drive({ version: 'v3', auth: auth });
   const folderNames = folderPath.split('/');
 
   let parentFolderId = 'root';
@@ -38,7 +40,7 @@ async function getFolderId(folderPath) {
 }
 
 async function makeCopyOfDocument(doc) {
-  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const drive = google.drive({ version: 'v3', auth: auth });
   try {
     const folderPath = `copies-of-documents/${doc.entity}/${doc.workgroup}`;
     const folderId = await getFolderId(folderPath);

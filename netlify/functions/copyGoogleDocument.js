@@ -1,12 +1,14 @@
 // ../netlify/functions/copyGoogleDocument.js
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { getGoogleAuth } from '../../utils/googleAuth';
 import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
+const auth = getGoogleAuth();
 
 async function makeCopyOfDocument(doc, folderId, rationale) {
-  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const drive = google.drive({ version: 'v3', auth: auth });
   try {
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-GB', {
