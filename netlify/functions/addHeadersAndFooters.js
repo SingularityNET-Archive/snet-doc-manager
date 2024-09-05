@@ -1,7 +1,9 @@
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { getGoogleAuth } from '../../utils/googleAuth';
 
 const oauth2Client = getOAuth2Client();
+const auth = getGoogleAuth();
 
 // Helper function to get the day suffix (th, st, nd, rd)
 function getDaySuffix(day) {
@@ -41,8 +43,8 @@ export const handler = async (event, context) => {
     };
   }
 
-  const docs = google.docs({ version: 'v1', auth: oauth2Client });
-  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const docs = google.docs({ version: 'v1', auth: auth });
+  const drive = google.drive({ version: 'v3', auth: auth });
 
   try {
     // Get the original document metadata
@@ -112,16 +114,8 @@ export const handler = async (event, context) => {
             index: 0
           },
           text: `Created by ${creatorUsername} for ${workgroup}, ${createdTime}
-Currently owned by - ${ownerUsername}\n`
-        }
-      },
-      {
-        insertText: {
-          location: {
-            segmentId: footerId,
-            index: 0
-          },
-          text: `Original Document ID: ${originalDocId}\n`
+Currently owned by - ${ownerUsername} 
+Original Document ID: ${originalDocId}\n`
         }
       }
     ];

@@ -190,8 +190,48 @@ const DocManager: NextPage = () => {
       }
   
       const commitData = await commitResult.json();
-      console.log('Commit result:', commitData);
+      console.log('Commit result:', formattedDate, commitData);
+
+      const commitBodyAndCommentsResult = await fetch('/.netlify/functions/getDocBodyAndCommentsAndCommitToGitHub', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          docs: [newDoc],
+          recentChangesResponse: [newDocId],
+          test: false,
+          date: formattedDate
+        }),
+      });
   
+      if (!commitResult.ok) {
+        throw new Error('Failed to commit document to GitHub');
+      }
+  
+      const commitBodyAndCommentsData = await commitBodyAndCommentsResult.json();
+      console.log('Commit result:', formattedDate, commitBodyAndCommentsData);
+
+      const commitCommentsResult = await fetch('/.netlify/functions/getDocCommentsAndCommitToGitHub', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          docs: [newDoc],
+          recentChangesResponse: [newDocId],
+          test: false,
+          date: formattedDate
+        }),
+      });
+  
+      if (!commitResult.ok) {
+        throw new Error('Failed to commit document to GitHub');
+      }
+  
+      const commitCommentsData = await commitCommentsResult.json();
+      console.log('Commit result:', formattedDate, commitCommentsData);
+
       // Step 5: Update the document metadata in the database
       const updateMetadataResult = await fetch('/.netlify/functions/updateDocumentMetadata', {
         method: 'POST',

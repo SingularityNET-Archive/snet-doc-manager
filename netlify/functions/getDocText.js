@@ -2,15 +2,17 @@
 import { google } from 'googleapis';
 import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { getGoogleAuth } from '../../utils/googleAuth';
 import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
+const auth = getGoogleAuth();
 
 export const handler = async (event, context) => {
   const { docs, statusChangeResponse, test } = JSON.parse(event.body);
 
   async function getDocumentText(doc) {
-    const docs = google.docs({ version: 'v1', auth: oauth2Client });
+    const docs = google.docs({ version: 'v1', auth: auth });
     try {
       const response = await docs.documents.get({
         documentId: doc.google_id,

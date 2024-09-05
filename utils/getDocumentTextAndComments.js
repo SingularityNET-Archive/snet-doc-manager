@@ -1,19 +1,23 @@
 // utils/getDocBodyAndComments.js
 import { google } from 'googleapis';
 import { getOAuth2Client } from '../utils/oauth2Client';
+import { getGoogleAuth } from '../../utils/googleAuth';
 import { sendErrorMessageToDiscord } from '../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
+const auth = getGoogleAuth();
 
-export async function getDocumentTextAndComments(doc) {
-    const docs = google.docs({ version: 'v1', auth: oauth2Client });
-    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+export async function getDocumentTextAndComments(doc, date = null) {
+    const docs = google.docs({ version: 'v1', auth: auth });
+    const drive = google.drive({ version: 'v3', auth: auth });
+    const fileId = date ? doc.originalDocId : doc.google_id;
+    console.log('File ID:', fileId, date);
   
     try {
       const [response, commentsResponse] = await Promise.all([
-        docs.documents.get({ documentId: doc.google_id }),
+        docs.documents.get({ documentId: fileId }),
         drive.comments.list({
-          fileId: doc.google_id,
+          fileId: fileId,
           fields: 'comments(id,author,content,quotedFileContent,anchor,replies(author,content))',
         }),
       ]);

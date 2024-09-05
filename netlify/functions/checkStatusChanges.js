@@ -2,9 +2,11 @@
 import { supabaseAdmin } from "../../lib/supabaseServerSideClient";
 import { google } from "googleapis";
 import { getOAuth2Client } from '../../utils/oauth2Client';
+import { getGoogleAuth } from '../../utils/googleAuth';
 import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
 const oauth2Client = getOAuth2Client();
+const auth = getGoogleAuth();
 
 export const handler = async (event, context) => {
   const { docs, test } = JSON.parse(event.body);
@@ -34,7 +36,7 @@ export const handler = async (event, context) => {
   }
 
   async function checkDocumentForChanges(doc) {
-    const drive = google.drive({ version: "v3", auth: oauth2Client });
+    const drive = google.drive({ version: "v3", auth: auth });
     try {
       // Attempt to fetch the document's current permissions
       const permissionsResponse = await drive.files.get({
