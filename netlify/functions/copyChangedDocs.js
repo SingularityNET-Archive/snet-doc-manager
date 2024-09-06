@@ -1,11 +1,11 @@
 // ../netlify/functions/copyChangedDocs.js
 import { google } from 'googleapis';
 import { supabaseAdmin } from '../../lib/supabaseServerSideClient';
-import { getOAuth2Client } from '../../utils/oauth2Client';
+//import { getOAuth2Client } from '../../utils/oauth2Client';
 import { getGoogleAuth } from '../../utils/googleAuth';
 import { sendErrorMessageToDiscord } from '../../utils/discordWebhook';
 
-const oauth2Client = getOAuth2Client();
+//const oauth2Client = getOAuth2Client();
 const auth = getGoogleAuth();
 
 async function getFolderId(folderPath) {

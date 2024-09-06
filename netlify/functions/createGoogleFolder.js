@@ -1,9 +1,9 @@
 // ../netlify/functions/createGoogleFolder.js
 import { google } from 'googleapis';
-import { getOAuth2Client } from '../../utils/oauth2Client';
+//import { getOAuth2Client } from '../../utils/oauth2Client';
 import { getGoogleAuth } from '../../utils/googleAuth';
 
-const oauth2Client = getOAuth2Client();
+//const oauth2Client = getOAuth2Client();
 const auth = getGoogleAuth();
 
 async function getFolderId(folderPath) {
