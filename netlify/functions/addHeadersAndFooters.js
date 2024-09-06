@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
-import { getOAuth2Client } from '../../utils/oauth2Client';
+//import { getOAuth2Client } from '../../utils/oauth2Client';
 import { getGoogleAuth } from '../../utils/googleAuth';
 
-const oauth2Client = getOAuth2Client();
+//const oauth2Client = getOAuth2Client();
 const auth = getGoogleAuth();
 
 // Helper function to get the day suffix (th, st, nd, rd)
